@@ -1,0 +1,105 @@
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: #0d1015; color: #e8e4da; overflow: hidden;
+  font: 14px/1.6 "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  user-select: none;
+}
+canvas { display: block; image-rendering: pixelated; }
+.hidden { display: none !important; }
+
+/* 登录 */
+#login {
+  position: fixed; inset: 0; z-index: 30; display: flex;
+  flex-direction: column; align-items: center; justify-content: center; gap: 14px;
+  background: radial-gradient(ellipse at 50% 40%, #1c2430 0%, #0a0c10 70%);
+}
+#login h1 { font-size: 46px; letter-spacing: 16px; color: #d8c98a; text-shadow: 0 0 24px #8a733a66; }
+#login .sub { color: #8d97a5; }
+#login .hint { color: #5e6875; font-size: 12px; margin-top: 20px; }
+#login input {
+  width: 240px; padding: 10px 14px; text-align: center; border-radius: 6px;
+  border: 1px solid #3a4453; background: #161b23; color: #e8e4da; font-size: 15px;
+}
+#login button {
+  padding: 10px 34px; border: 0; border-radius: 6px; cursor: pointer;
+  background: #4a6b4a; color: #eaf5ea; font-size: 15px; letter-spacing: 3px;
+}
+#login button:hover { background: #5b8259; }
+
+/* HUD */
+#hud { position: fixed; top: 12px; left: 12px; width: 230px; }
+#hud .row { display: flex; justify-content: space-between; text-shadow: 0 1px 3px #000; }
+.bar { position: relative; height: 15px; margin-top: 4px; background: #1a1f28; border: 1px solid #333c48; border-radius: 3px; overflow: hidden; }
+.bar i { display: block; height: 100%; transition: width .15s; }
+.hpbar i { background: linear-gradient(#c0453c, #8a2e28); }
+.expbar { height: 7px; }
+.expbar i { background: linear-gradient(#d8c98a, #a8912f); }
+.bar span { position: absolute; inset: 0; text-align: center; font-size: 11px; line-height: 15px; text-shadow: 0 1px 2px #000; }
+#stats { margin-top: 4px; font-size: 12px; color: #96a0ae; text-shadow: 0 1px 3px #000; }
+
+#chapter {
+  position: fixed; top: 12px; left: 50%; transform: translateX(-50%);
+  color: #d8c98a; font-size: 13px; letter-spacing: 2px; text-shadow: 0 1px 4px #000;
+}
+
+/* 任务面板 */
+#questbox {
+  position: fixed; top: 12px; right: 12px; width: 220px; padding: 10px 12px;
+  background: #10141bd9; border: 1px solid #2b3441; border-radius: 6px;
+}
+#questbox h3 { font-size: 13px; color: #d8c98a; margin-bottom: 6px; }
+#questbox small, .panel small { color: #5e6875; font-weight: 400; }
+#questlist { list-style: none; font-size: 12px; }
+#questlist li { margin-bottom: 6px; color: #c3ccd8; }
+#questlist b { color: #e8e4da; display: block; }
+
+/* 日志 */
+#log {
+  position: fixed; left: 12px; bottom: 120px; width: 300px; font-size: 12px;
+  text-shadow: 0 1px 3px #000; pointer-events: none;
+}
+#log div { color: #b7c0cc; opacity: .95; }
+#log .gold { color: #d8c98a; }
+#log .red { color: #d97a70; }
+
+/* 聊天 */
+#chatbox { position: fixed; left: 12px; bottom: 12px; width: 340px; }
+#chatlog { max-height: 90px; overflow: hidden; font-size: 12px; text-shadow: 0 1px 3px #000; }
+#chatlog b { color: #7fb3d8; }
+#chatinput {
+  width: 100%; margin-top: 6px; padding: 6px 10px; border-radius: 4px;
+  border: 1px solid #3a4453; background: #10141bee; color: #e8e4da;
+}
+
+/* 面板 */
+.panel {
+  position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  min-width: 330px; max-width: 460px; padding: 16px 18px;
+  background: #10141bf2; border: 1px solid #3a4453; border-radius: 8px;
+  box-shadow: 0 10px 40px #000a;
+}
+.panel h3 { color: #d8c98a; margin-bottom: 10px; }
+#bagitems { display: flex; flex-direction: column; gap: 5px; }
+.item {
+  display: flex; justify-content: space-between; align-items: center; gap: 10px;
+  padding: 6px 9px; background: #171d26; border: 1px solid #2b3441; border-radius: 4px;
+  cursor: pointer; font-size: 13px;
+}
+.item:hover { border-color: #6a7787; }
+.item.equipped { border-color: #a8912f; }
+.item em { color: #6c7683; }
+.item .d { color: #7d8794; font-size: 11px; font-style: normal; }
+#dlgbody p { margin-bottom: 10px; color: #cdd5df; }
+#dlgbody button, #dlgclose {
+  padding: 6px 14px; margin-right: 8px; border: 1px solid #4a6b4a; border-radius: 4px;
+  background: #22301f; color: #cfe0cd; cursor: pointer; font-size: 13px;
+}
+#dlgbody button:hover { background: #33452f; }
+#dlgclose { border-color: #3a4453; background: #1a2029; color: #98a2af; margin-top: 6px; }
+
+#deadmask {
+  position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
+  background: #40060699; z-index: 20; pointer-events: none;
+}
+#deadmask div { text-align: center; font-size: 34px; letter-spacing: 10px; color: #e8d3d0; }
+#deadmask small { display: block; font-size: 14px; letter-spacing: 2px; margin-top: 10px; color: #c7a5a2; }

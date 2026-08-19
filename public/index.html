@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>提亚兰 · Tiaran MMO MVP</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<div id="login">
+  <h1>提 亚 兰</h1>
+  <p class="sub">守望者，提亚兰还剩下最后一次机会。</p>
+  <input id="name" maxlength="12" placeholder="输入你的名字" />
+  <button id="go">进入世界</button>
+  <p class="hint">WASD 移动 · J / 空格 攻击 · E 交互 · B 背包 · Q 任务 · Enter 聊天</p>
+</div>
+
+<canvas id="cv"></canvas>
+
+<div id="ui" class="hidden">
+  <div id="hud">
+    <div class="row"><span id="pname"></span><span id="plv"></span></div>
+    <div class="bar hpbar"><i id="hpfill"></i><span id="hptext"></span></div>
+    <div class="bar expbar"><i id="expfill"></i></div>
+    <div id="stats"></div>
+  </div>
+
+  <div id="chapter"></div>
+
+  <div id="questbox">
+    <h3>任务 <small>Q</small></h3>
+    <ul id="questlist"></ul>
+  </div>
+
+  <div id="log"></div>
+
+  <div id="chatbox">
+    <div id="chatlog"></div>
+    <input id="chatinput" maxlength="120" placeholder="按 Enter 发言" class="hidden" />
+  </div>
+
+  <div id="bag" class="panel hidden">
+    <h3>背包 <small>B 关闭</small></h3>
+    <div id="bagitems"></div>
+  </div>
+
+  <div id="dialog" class="panel hidden">
+    <h3 id="dlgname"></h3>
+    <div id="dlgbody"></div>
+    <button id="dlgclose">关闭 (Esc)</button>
+  </div>
+
+  <div id="deadmask" class="hidden"><div>你 倒 下 了<small>正在营地重塑身体…</small></div></div>
+</div>
+
+<script src="game.js"></script>
+</body>
+</html>

@@ -1,0 +1,8 @@
+{
+  "name": "tiaran-mmo-mvp",
+  "version": "0.1.0",
+  "description": "提亚兰 — 塞尔达式 2D 多人在线 RPG 的 MVP",
+  "main": "server/index.js",
+  "scripts": { "start": "node server/index.js" },
+  "dependencies": { "ws": "^8.18.0" }
+}
