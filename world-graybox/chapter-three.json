@@ -1,0 +1,548 @@
+{
+  "schemaVersion": 1,
+  "id": "whalefall-chapter-three",
+  "name": "鲸落万物生 · 第三章灰盒",
+  "saveKey": "whalefall-chapter-three-graybox-v1",
+  "startCheckpoint": "n03",
+  "camera": {
+    "lookAhead": 0,
+    "verticalDeadZone": 110
+  },
+  "doorway": {
+    "height": 100,
+    "belowFloor": 8,
+    "inset": 12
+  },
+  "storyFlags": [
+    "n03-met",
+    "n03-lured",
+    "n03-cleared",
+    "n03-checked",
+    "n03-opened",
+    "n03-backflow",
+    "n03-held",
+    "n03-rescued",
+    "n03-settled-a",
+    "n03-settled-b",
+    "n03-apology",
+    "n03-complete"
+  ],
+  "abilityNotices": {
+    "dash": "本章只需普通跳与近战，冲刺尚未解锁。"
+  },
+  "source": {
+    "world": "world.md v0.1",
+    "story": "story.md v0.2 · 第三章",
+    "note": "章节事件沿用待审提案，地形、交互和战斗参数供灰盒试玩调整。"
+  },
+  "ui": {
+    "title": "第三章 · 被冲走的家",
+    "platformColor": "#aab3be",
+    "controls": "← → / A D 移动　空格 跳跃　J 近战　↑ 交流 / 查看 / 行动　R 返回存档　F 全屏",
+    "note": "先到左侧住巢旁，按 ↑ 与补巢者交流菌床和回水。",
+    "saveNotice": "触碰绿色方块存档回血。R/死亡/刷新保留章节行动，未完成的遭遇重置；各试玩存档独立。",
+    "canvasLabel": "第三章灰盒，左右移动，空格跳跃，J近战，上方向键互动，R返回存档，F全屏。"
+  },
+  "rooms": {
+    "n03": {
+      "name": "03 · 胃室·蓄养腔",
+      "chapter": 3,
+      "chapterLabel": "第三章",
+      "width": 3360,
+      "height": 1080,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "hint": "先到左侧住巢旁，按 ↑ 与补巢者交流菌床和回水。",
+      "hints": [
+        {
+          "requiresFlags": [
+            "n03-complete"
+          ],
+          "text": "第三章完成 · 安置已完成，可回访蓄养腔或点新游戏重新试玩。"
+        },
+        {
+          "requiresFlags": [
+            "n03-apology"
+          ],
+          "text": "补巢者指出裂隙方向。到右侧入口继续。"
+        },
+        {
+          "requiresFlags": [
+            "n03-settled-a",
+            "n03-settled-b"
+          ],
+          "text": "两处巢片已固定，到右侧补巢者旁说明与道歉。"
+        },
+        {
+          "requiresFlags": [
+            "n03-rescued"
+          ],
+          "text": "协助安置：沿高台向右，分别固定两处巢片。"
+        },
+        {
+          "requiresFlags": [
+            "n03-held"
+          ],
+          "text": "旧瓣已被压住。沿右侧跳台上行，与老守护者一起完成救援。"
+        },
+        {
+          "requiresFlags": [
+            "n03-backflow"
+          ],
+          "text": "回水冲坏菌床。到旧巢槽按 ↑ 抓住纤维，先帮助居民。"
+        },
+        {
+          "requiresFlags": [
+            "n03-opened"
+          ],
+          "text": "旧瓣已开，积水正向外涌出。"
+        },
+        {
+          "requiresFlags": [
+            "n03-checked"
+          ],
+          "text": "已查看眼前排水方向。靠近旧瓣再次按 ↑，由你主动挑开缝隙。"
+        },
+        {
+          "requiresFlags": [
+            "n03-cleared"
+          ],
+          "text": "阀前危险已解除。先到右侧旧瓣按 ↑ 检查。"
+        },
+        {
+          "requiresFlags": [
+            "n03-lured"
+          ],
+          "text": "低坑能腾挪；把大甲留在左侧空地，等近扑收招露出腹侧再反击。"
+        },
+        {
+          "requiresFlags": [
+            "n03-met"
+          ],
+          "text": "接近右侧旧瓣查看污絮；遇袭后退向左侧空置低坑，引离旧巢槽。"
+        }
+      ],
+      "doors": {},
+      "entrances": {},
+      "portals": [],
+      "platforms": [
+        {
+          "x": 0,
+          "y": 540,
+          "w": 440,
+          "h": 540
+        },
+        {
+          "x": 440,
+          "y": 620,
+          "w": 180,
+          "h": 460
+        },
+        {
+          "x": 620,
+          "y": 700,
+          "w": 180,
+          "h": 380
+        },
+        {
+          "x": 800,
+          "y": 780,
+          "w": 180,
+          "h": 300
+        },
+        {
+          "x": 980,
+          "y": 860,
+          "w": 1220,
+          "h": 220
+        },
+        {
+          "x": 2200,
+          "y": 780,
+          "w": 180,
+          "h": 300
+        },
+        {
+          "x": 2380,
+          "y": 700,
+          "w": 180,
+          "h": 380
+        },
+        {
+          "x": 2560,
+          "y": 620,
+          "w": 180,
+          "h": 460
+        },
+        {
+          "x": 2740,
+          "y": 540,
+          "w": 620,
+          "h": 540
+        },
+        {
+          "x": 1840,
+          "y": 748,
+          "w": 200,
+          "h": 18
+        }
+      ],
+      "signs": [
+        {
+          "x": 50,
+          "y": 410,
+          "text": "蓄养腔 · 住巢与回水"
+        },
+        {
+          "x": 1090,
+          "y": 710,
+          "text": "空置低坑 · 腾挪空间"
+        },
+        {
+          "x": 1830,
+          "y": 705,
+          "text": "旧巢槽 · 上方转身受限"
+        },
+        {
+          "x": 2300,
+          "y": 640,
+          "text": "避流高台 ↑"
+        },
+        {
+          "x": 3110,
+          "y": 410,
+          "text": "肝缘脂库 →"
+        }
+      ],
+      "items": [],
+      "enemies": [
+        {
+          "kind": "sludge-crab",
+          "name": "栖污大甲",
+          "x": 1990,
+          "floor": 860,
+          "min": 1180,
+          "max": 2110,
+          "triggerX": 1900,
+          "homeX": 1320,
+          "pitRight": 1700
+        }
+      ],
+      "markers": [],
+      "source": {
+        "chapterScript": "story.md v0.2 · 第三章/N03-01",
+        "grayboxNote": "引离低坑、主动开瓣、回水与安置行动的灰盒提案。"
+      },
+      "encounter": {
+        "id": "N03-01",
+        "requiresFlags": [
+          "n03-met"
+        ],
+        "flag": "n03-cleared",
+        "lureFlag": "n03-lured",
+        "notice": "大甲退回低坑，阀前危险已解除。到右侧旧瓣，先检查排水方向。"
+      },
+      "transitions": [
+        {
+          "requiresFlags": [
+            "n03-opened"
+          ],
+          "unlessFlags": [
+            "n03-backflow"
+          ],
+          "setsFlag": "n03-backflow",
+          "delay": 1.4,
+          "notice": "积水先涌出，回水随后撞回住巢，菌床被掀走。到旧巢槽按 ↑ 抓住纤维，协助救援。"
+        }
+      ],
+      "interactions": [
+        {
+          "id": "n03-meet",
+          "x": 310,
+          "y": 480,
+          "w": 70,
+          "h": 60,
+          "kind": "resident",
+          "label": "补巢者 · ↑ 交流",
+          "setsFlag": "n03-met",
+          "unlessFlags": [
+            "n03-backflow"
+          ],
+          "message": "补巢者指向发灰的菌床。浅槽的菌丝刚伸出就卷回，细絮随回水返回住巢。深处旧瓣旁传来低闷鲸歌。"
+        },
+        {
+          "id": "n03-check",
+          "x": 2080,
+          "y": 800,
+          "w": 80,
+          "h": 60,
+          "kind": "observation",
+          "label": "↑ 检查旧瓣与排水",
+          "setsFlag": "n03-checked",
+          "requiresFlags": [
+            "n03-cleared"
+          ],
+          "unlessFlags": [
+            "n03-checked"
+          ],
+          "message": "你查看眼前的排水方向。旧瓣已被撞松，积水从缝内渗出。是否挑开这条缝，仍由你主动行动。"
+        },
+        {
+          "id": "n03-open",
+          "x": 2080,
+          "y": 800,
+          "w": 80,
+          "h": 60,
+          "kind": "observation",
+          "label": "↑ 挑开旧瓣",
+          "setsFlag": "n03-opened",
+          "requiresFlags": [
+            "n03-checked"
+          ],
+          "unlessFlags": [
+            "n03-opened"
+          ],
+          "message": "拾潮者挑开剩余缝隙。积压的水向外冲出，另一侧回水还在积聚。"
+        },
+        {
+          "id": "n03-hold",
+          "x": 1820,
+          "y": 800,
+          "w": 80,
+          "h": 60,
+          "kind": "observation",
+          "label": "↑ 抓住纤维协助救援",
+          "setsFlag": "n03-held",
+          "requiresFlags": [
+            "n03-backflow"
+          ],
+          "unlessFlags": [
+            "n03-held"
+          ],
+          "message": "你抓住补巢者身后的纤维，用披风压住破口。守卫赶来压住旧瓣，菌床表层已经被冲走。"
+        },
+        {
+          "id": "n03-rescue",
+          "x": 2410,
+          "y": 640,
+          "w": 80,
+          "h": 60,
+          "kind": "resident",
+          "label": "老守护者 · ↑ 协助救援",
+          "setsFlag": "n03-rescued",
+          "requiresFlags": [
+            "n03-held"
+          ],
+          "unlessFlags": [
+            "n03-rescued"
+          ],
+          "message": "你与老守护者固定巢片，把居民送上高台。他问是否查过回水经过的地方。许可暂留，离开前先协助安置。"
+        },
+        {
+          "id": "n03-settle-a",
+          "x": 2590,
+          "y": 560,
+          "w": 70,
+          "h": 60,
+          "kind": "observation",
+          "label": "↑ 固定第一处巢片",
+          "setsFlag": "n03-settled-a",
+          "requiresFlags": [
+            "n03-rescued"
+          ],
+          "unlessFlags": [
+            "n03-settled-a"
+          ],
+          "message": "第一处巢片系到高台支架，居民移入避流处。"
+        },
+        {
+          "id": "n03-settle-b",
+          "x": 2830,
+          "y": 480,
+          "w": 70,
+          "h": 60,
+          "kind": "observation",
+          "label": "↑ 固定第二处巢片",
+          "setsFlag": "n03-settled-b",
+          "requiresFlags": [
+            "n03-rescued"
+          ],
+          "unlessFlags": [
+            "n03-settled-b"
+          ],
+          "message": "第二处巢片也已系稳，最后一户安顿下来。"
+        },
+        {
+          "id": "n03-apology",
+          "x": 3030,
+          "y": 480,
+          "w": 70,
+          "h": 60,
+          "kind": "resident",
+          "label": "补巢者 · ↑ 说明与道歉",
+          "setsFlag": "n03-apology",
+          "requiresFlags": [
+            "n03-settled-a",
+            "n03-settled-b"
+          ],
+          "message": "补巢者收回磨去居住刻痕的旧壳，没有回应道歉。你绑稳最后的系带，请求查看供养来源；他挪开巢片，指向脂库。"
+        },
+        {
+          "id": "n03-end",
+          "x": 3190,
+          "y": 460,
+          "w": 110,
+          "h": 80,
+          "kind": "exit",
+          "label": "↑ 前往肝缘脂库",
+          "setsFlag": "n03-complete",
+          "requiresFlags": [
+            "n03-apology"
+          ],
+          "lockedMessage": "先处理阀前危险、主动检查开瓣，并完成救援、两处安置和交流。",
+          "message": "第三章完成 · 安置已完成，损坏菌床的后果仍在。可以回访蓄养腔。"
+        }
+      ],
+      "scenes": [
+        {
+          "x": 230,
+          "y": 516,
+          "w": 150,
+          "h": 12,
+          "color": "#8ba97c",
+          "label": "菌床",
+          "unlessFlags": [
+            "n03-backflow"
+          ]
+        },
+        {
+          "x": 230,
+          "y": 516,
+          "w": 150,
+          "h": 12,
+          "color": "#8c7265",
+          "label": "菌床已被冲坏",
+          "requiresFlags": [
+            "n03-backflow"
+          ]
+        },
+        {
+          "x": 1980,
+          "y": 818,
+          "w": 65,
+          "h": 30,
+          "color": "#b3a08a",
+          "label": "旧巢槽",
+          "unlessFlags": [
+            "n03-backflow"
+          ]
+        },
+        {
+          "x": 1100,
+          "y": 844,
+          "w": 1100,
+          "h": 10,
+          "color": "#75b5c9",
+          "label": "积水外涌 →",
+          "requiresFlags": [
+            "n03-opened"
+          ],
+          "unlessFlags": [
+            "n03-backflow"
+          ]
+        },
+        {
+          "x": 1100,
+          "y": 844,
+          "w": 1100,
+          "h": 10,
+          "color": "#ad8881",
+          "label": "← 回水与散落巢片",
+          "requiresFlags": [
+            "n03-backflow"
+          ],
+          "unlessFlags": [
+            "n03-held"
+          ]
+        },
+        {
+          "x": 1940,
+          "y": 816,
+          "w": 90,
+          "h": 30,
+          "color": "#8c7265",
+          "label": "菌床和系带受损",
+          "requiresFlags": [
+            "n03-backflow"
+          ]
+        },
+        {
+          "x": 2110,
+          "y": 798,
+          "w": 10,
+          "h": 62,
+          "color": "#8da4b4",
+          "label": "守卫压住旧瓣",
+          "requiresFlags": [
+            "n03-held"
+          ]
+        },
+        {
+          "x": 2400,
+          "y": 666,
+          "w": 120,
+          "h": 22,
+          "color": "#b9d8ae",
+          "label": "居民已到高台",
+          "requiresFlags": [
+            "n03-rescued"
+          ]
+        },
+        {
+          "x": 2580,
+          "y": 595,
+          "w": 90,
+          "h": 14,
+          "color": "#b6a48e",
+          "label": "第一处已固定",
+          "requiresFlags": [
+            "n03-settled-a"
+          ]
+        },
+        {
+          "x": 2820,
+          "y": 515,
+          "w": 90,
+          "h": 14,
+          "color": "#b6a48e",
+          "label": "第二处已固定",
+          "requiresFlags": [
+            "n03-settled-b"
+          ]
+        }
+      ]
+    }
+  },
+  "checkpoints": {
+    "n03": {
+      "room": "n03",
+      "x": 100,
+      "floor": 540,
+      "name": "蓄养腔 · 住巢入口"
+    },
+    "n03-pit": {
+      "room": "n03",
+      "x": 1040,
+      "floor": 860,
+      "name": "蓄养腔 · 低坑前"
+    },
+    "n03-high": {
+      "room": "n03",
+      "x": 2260,
+      "floor": 780,
+      "name": "蓄养腔 · 避流台前"
+    }
+  }
+}

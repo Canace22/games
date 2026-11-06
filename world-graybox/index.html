@@ -70,6 +70,13 @@
     guardRecovery: 1.05,       // 收招露出扣带，可正面反击
     guardAttackRange: 105,     // 钳击向前伸出的距离
 
+    sludgeHealth: 5,           // 第三章大甲有效命中五次后退回低坑
+    sludgeChaseSpeed: 160,     // 大甲追向持灯者的速度，玩家可引离巢槽
+    sludgeWindup: 0.7,        // 近扑前摇，开始时锁定朝向
+    sludgeLungeSpeed: 260,     // 近扑速度
+    sludgeLungeDuration: 0.28, // 近扑持续时间
+    sludgeRecovery: 1.1,       // 收招抬甲露出腹侧的时间
+
     // Boss：三招依次循环，橙色是前摇，红色是生效中的攻击。
     bossHealth: 16,            // Boss 血量
     bossSweepWindup: 0.65,     // 近身横扫的前摇时间
@@ -200,6 +207,7 @@
   let boss;
   let waves = [];
   let checkpointTouch = "";
+  let storyTimers = {};
   const currentRoom = () => ROOMS[roomId];
 
   function notify(message) {
@@ -264,9 +272,12 @@
       }
       require(Array.isArray(room.enemies) && room.enemies.every(enemy => numbers(enemy, ["x", "floor", "min", "max"])
         && enemy.min <= enemy.x && enemy.x <= enemy.max), `${id}.enemies`);
-      require(!room.enemies.some(enemy => ["scavenger", "shell-guard"].includes(enemy.kind)) || record(room.encounter), `${id}.encounter`);
+      require(!room.enemies.some(enemy => ["scavenger", "shell-guard", "sludge-crab"].includes(enemy.kind)) || record(room.encounter), `${id}.encounter`);
       for (const field of ["barriers", "scenes"]) require(room[field] === undefined || (Array.isArray(room[field])
         && room[field].every(item => rect(item) && flagConditions(item) && typeof item.label === "string")), `${id}.${field}`);
+      require(room.transitions === undefined || (Array.isArray(room.transitions) && room.transitions.every(item => numbers(item, ["delay"])
+        && item.delay >= 0 && flagConditions(item) && data.storyFlags?.includes(item.setsFlag)
+        && typeof item.notice === "string")), `${id}.transitions`);
       require(room.hints.every(flagConditions), `${id}.hints.flags`);
       require(room.interactions === undefined || (Array.isArray(room.interactions) && room.interactions.every(item => rect(item)
         && typeof item.id === "string" && typeof item.label === "string" && typeof item.message === "string"
@@ -275,8 +286,10 @@
       if (room.encounter) {
         require(typeof room.encounter.id === "string" && data.storyFlags?.includes(room.encounter.flag)
           && flagConditions(room.encounter) && room.enemies.length > 0
-          && room.enemies.every(enemy => ["scavenger", "shell-guard"].includes(enemy.kind)
+          && room.enemies.every(enemy => ["scavenger", "shell-guard", "sludge-crab"].includes(enemy.kind)
             && numbers(enemy, ["triggerX", "homeX"]) && enemy.homeX >= enemy.min && enemy.homeX <= enemy.max), `${id}.encounter`);
+        if (room.enemies.some(e => e.kind === "sludge-crab")) require(data.storyFlags?.includes(room.encounter.lureFlag)
+          && room.enemies.every(e => numbers(e, ["pitRight"]) && e.pitRight >= e.min && e.pitRight <= e.max), `${id}.encounter.lure`);
       }
       if (room.boss) require(rect(room.boss.spawn) && numbers(room.boss.arena, ["left", "right", "floor"])
         && room.boss.arena.left < room.boss.arena.right, `${id}.boss`);
@@ -449,6 +462,7 @@
     portalRequested = false;
     checkpointTouch = progress.checkpoint;
     resetCombat();
+    storyTimers = {};
     animationTime = 0;
     accumulator = 0;
     Object.assign(camera, cameraTarget(true));
@@ -639,7 +653,10 @@
           state: progress.flags.has(room.encounter.flag) ? "withdrawn" : "dormant", timer: 0 } : {}),
         ...(spawn.kind === "shell-guard" ? { w: 64, h: 54, y: spawn.floor - 54,
           hp: progress.flags.has(room.encounter.flag) ? 0 : CONFIG.guardHealth,
-          state: progress.flags.has(room.encounter.flag) ? "withdrawn" : "dormant", timer: 0, cycle: 0, move: "claw" } : {}) })),
+          state: progress.flags.has(room.encounter.flag) ? "withdrawn" : "dormant", timer: 0, cycle: 0, move: "claw" } : {}),
+        ...(spawn.kind === "sludge-crab" ? { w: 58, h: 44, y: spawn.floor - 44,
+          hp: progress.flags.has(room.encounter.flag) ? 0 : CONFIG.sludgeHealth,
+          state: progress.flags.has(room.encounter.flag) ? "withdrawn" : "dormant", timer: 0 } : {}) })),
     ]));
     boss = createBoss();
     waves = [];
@@ -706,6 +723,7 @@
     for (const enemy of enemiesByRoom[roomId]) {
       if (enemy.kind === "scavenger" && updateScavenger(enemy, dt)) continue;
       if (enemy.kind === "shell-guard") { updateGuard(enemy, dt); continue; }
+      if (enemy.kind === "sludge-crab") { updateSludgeCrab(enemy, dt); continue; }
       if (enemy.hp <= 0) continue;
       enemy.flash = Math.max(0, enemy.flash - dt);
       enemy.stun = Math.max(0, enemy.stun - dt);
@@ -807,6 +825,45 @@
     notify(encounter.notice);
   }
 
+  function updateSludgeCrab(enemy, dt) {
+    enemy.flash = Math.max(0, enemy.flash - dt);
+    if (enemy.state === "withdrawn") {
+      enemy.x = approach(enemy.x, enemy.homeX, CONFIG.scavengerRetreatSpeed * dt);return;
+    }
+    if (enemy.state === "dormant") {
+      if (!conditionsMet(currentRoom().encounter) || player.x < enemy.triggerX) return;
+      enemy.state = "chase";
+      notify("污絮中的大甲扑出 · 向左退到空置低坑，避开狭窄旧巢槽");
+    }
+    enemy.timer = Math.max(0, enemy.timer - dt);
+    if ((enemy.state === "recovery" && enemy.timer === 0) || enemy.state === "chase") {
+      enemy.dir = player.x + BODY.width / 2 >= enemy.x + enemy.w / 2 ? 1 : -1;
+      if (Math.abs(player.x - enemy.x) < 145 && Math.abs(player.y + BODY.height - enemy.floor) < 90) {
+        enemy.state = "windup";enemy.timer = CONFIG.sludgeWindup;
+      } else enemy.state = "chase";
+    } else if (enemy.state === "windup" && enemy.timer === 0) {
+      enemy.state = "lunge";enemy.timer = CONFIG.sludgeLungeDuration;
+    } else if (enemy.state === "lunge" && enemy.timer === 0) {
+      enemy.state = "recovery";enemy.timer = CONFIG.sludgeRecovery;
+    }
+    enemy.vx = enemy.state === "chase" ? enemy.dir * CONFIG.sludgeChaseSpeed
+      : enemy.state === "lunge" ? enemy.dir * CONFIG.sludgeLungeSpeed : 0;
+    enemy.x = clamp(enemy.x + enemy.vx * dt, enemy.min, enemy.max);
+    const flag = currentRoom().encounter.lureFlag;
+    if (enemy.x <= enemy.pitRight && !progress.flags.has(flag)) {
+      progress.flags.add(flag);saveProgress();notify("大甲已离开巢槽 · 低坑内等近扑收招，攻击抬起的腹侧");
+    }
+  }
+
+  function updateStory(dt) {
+    for (const event of currentRoom().transitions || []) {
+      if (progress.flags.has(event.setsFlag) || !conditionsMet(event)) continue;
+      storyTimers[event.setsFlag] = (storyTimers[event.setsFlag] || 0) + dt;
+      if (storyTimers[event.setsFlag] < event.delay) continue;
+      progress.flags.add(event.setsFlag);saveProgress();notify(event.notice);
+    }
+  }
+
   function bossSweepBox() {
     return { x: boss.dir > 0 ? boss.x + boss.w : boss.x - CONFIG.bossSweepRange,
       y: currentRoom().boss.arena.floor - 42, w: CONFIG.bossSweepRange, h: 42 };
@@ -863,14 +920,17 @@
         notify("重壳挡住攻击 · 跳到扣带一侧，或等收招再反击");
         continue;
       }
+      if (enemy.kind === "sludge-crab" && (enemy.x > enemy.pitRight || enemy.state !== "recovery")) {
+        hitFeedback();notify("甲缘挡住攻击 · 引向左侧低坑，等近扑收招露出腹侧");continue;
+      }
       enemy.hp = Math.max(0, enemy.hp - CONFIG.attackDamage);
       enemy.flash = CONFIG.hitFlash;
-      if (enemy.kind !== "shell-guard") {
+      if (!["shell-guard", "sludge-crab"].includes(enemy.kind)) {
         enemy.stun = CONFIG.enemyStun;
         enemy.vx = player.attackFacing * CONFIG.enemyKnockback;
         enemy.vy = -CONFIG.enemyKnockbackY;
       }
-      if (enemy.hp <= 0 && ["scavenger", "shell-guard"].includes(enemy.kind)) enemy.state = "withdrawn";
+      if (enemy.hp <= 0 && ["scavenger", "shell-guard", "sludge-crab"].includes(enemy.kind)) enemy.state = "withdrawn";
       hitFeedback();
     }
     if (!boss || boss.hp <= 0 || boss.lastSwing === attackSerial || !touches(box, boss)) return;
@@ -969,6 +1029,7 @@
     if (portalRequested) { portalRequested = false; if (!enterInteraction()) enterPortal(); }
     updateObjects();
     updateCombat(dt);
+    updateStory(dt);
     const target = cameraTarget();
     const blend = 1 - Math.exp(-CONFIG.cameraFollow * dt);
     camera.x += (target.x - camera.x) * blend;
@@ -1081,11 +1142,12 @@
 
   function drawCombat() {
     for (const enemy of enemiesByRoom[roomId]) {
-      if (enemy.hp <= 0 && !["scavenger", "shell-guard"].includes(enemy.kind)) continue;
+      if (enemy.hp <= 0 && !["scavenger", "shell-guard", "sludge-crab"].includes(enemy.kind)) continue;
       ctx.fillStyle = enemy.flash > 0 ? "#ffffff" : enemy.state === "withdrawn" ? "#68717c"
         : enemy.state === "windup" ? "#edba7c" : ["lunge", "active"].includes(enemy.state) ? "#ed8383" : "#c38792";
       ctx.fillRect(Math.round(enemy.x), Math.round(enemy.y), enemy.w, enemy.h);
       if (enemy.kind === "shell-guard") drawGuard(enemy);
+      if (enemy.kind === "sludge-crab") drawSludgeCrab(enemy);
       if (enemy.kind === "scavenger") {
         ctx.strokeStyle = ctx.fillStyle;
         ctx.strokeRect(enemy.x + 4, enemy.y - 5, enemy.w - 8, 5);
@@ -1123,6 +1185,22 @@
       ctx.strokeStyle=enemy.state === "windup" ? "#edba7c" : "#ed8383";
       ctx.setLineDash(enemy.state === "windup" ? [5,4] : []);
       ctx.lineWidth=2;ctx.strokeRect(box.x,box.y,box.w,box.h);ctx.setLineDash([]);
+    }
+  }
+
+  function drawSludgeCrab(enemy) {
+    ctx.strokeStyle=enemy.state === "windup" ? "#edba7c" : "#bbc2ca";ctx.lineWidth=3;
+    ctx.strokeRect(enemy.x+5,enemy.y-6,enemy.w-10,12);
+    if (enemy.state === "recovery" && enemy.x <= enemy.pitRight) {
+      ctx.fillStyle="#e7ca86";ctx.fillRect(enemy.x+10,enemy.floor-9,enemy.w-20,7);
+    }
+    ctx.font="13px system-ui";ctx.textAlign="center";ctx.fillStyle="#d5dfeb";
+    ctx.fillText(enemy.state === "withdrawn" ? "大甲退回低坑" : enemy.state === "dormant" ? "污絮"
+      : `栖污大甲 ${enemy.hp}${enemy.state === "recovery" ? " · 抬甲收招" : ""}`, enemy.x+enemy.w/2,enemy.y-20);
+    if (enemy.state === "windup") {
+      const reach=CONFIG.sludgeLungeSpeed*CONFIG.sludgeLungeDuration;
+      ctx.strokeStyle="#edba7c";ctx.setLineDash([5,4]);
+      ctx.strokeRect(enemy.dir > 0 ? enemy.x+enemy.w : enemy.x-reach,enemy.y,reach,enemy.h);ctx.setLineDash([]);
     }
   }
 
@@ -1208,6 +1286,8 @@
     }
     for (const item of currentRoom().interactions || []) {
       if (item.kind !== "exit" && !conditionsMet(item)) continue;
+      if (item.kind === "exit" && progress.flags.has(item.setsFlag)
+        && currentRoom().portals?.some(portal => conditionsMet(portal) && touches(item, portal))) continue;
       if (item.y - camera.y < 100) continue; // 避免高处观察点的框与章节目标重叠。
       const done = progress.flags.has(item.setsFlag);
       ctx.strokeStyle = ctx.fillStyle = item.kind === "resident" ? "#b9d8ae" : done ? "#a0b4c5" : "#e7ca86";
@@ -1229,6 +1309,8 @@
     ctx.textAlign = "center";
     ctx.font = "14px system-ui";
     for (const portal of currentRoom().portals || []) {
+      if (currentRoom().interactions?.some(item => item.kind === "exit" && touches(item, portal)
+        && !progress.flags.has(item.setsFlag))) continue;
       const open = conditionsMet(portal);
       ctx.strokeStyle = ctx.fillStyle = open ? "#e7e9ed" : "#8793a4";
       ctx.lineWidth = 2;
@@ -1523,6 +1605,7 @@
       markers: currentRoom().markers || [],
       ...(currentRoom().barriers ? { barriers: currentRoom().barriers.filter(conditionsMet) } : {}),
       ...(currentRoom().scenes ? { scenes: currentRoom().scenes.filter(conditionsMet) } : {}),
+      ...(currentRoom().transitions ? { storyTimers: { ...storyTimers } } : {}),
       openedRoutes: [...progress.openedRoutes],
       ...(MAP.storyFlags ? { flags: [...progress.flags], objective: roomHint(),
         interactions: (currentRoom().interactions || []).filter(item => conditionsMet(item) || item.kind === "exit")
