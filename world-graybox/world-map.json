@@ -1,0 +1,2325 @@
+{
+  "schemaVersion": 1,
+  "layoutVersion": 2,
+  "id": "whalefall-world-graybox",
+  "name": "鲸落万物生 · 整图灰盒",
+  "saveKey": "whalefall-world-graybox-v1",
+  "startCheckpoint": "n01",
+  "routeLocks": {
+    "A": {
+      "name": "捷径 A",
+      "from": "n04",
+      "to": "n02"
+    },
+    "B": {
+      "name": "捷径 B",
+      "from": "n08",
+      "to": "n05"
+    }
+  },
+  "source": {
+    "file": "lore-map.json",
+    "sha256": "d2b2eba1fdd114ea9bf8c66f387dfacb968c6bb2ca4ed1b46856aa961b7a01a3",
+    "note": "沿用叙事主线与11→09→12回访，空间与A/B捷径按用户确认的物理草图搭建；来源null仍为待设计。"
+  },
+  "mainRoute": [
+    "n01",
+    "n02",
+    "n03",
+    "n04",
+    "n05",
+    "n06",
+    "n07",
+    "n08",
+    "n09",
+    "n10",
+    "n11",
+    "n12"
+  ],
+  "returnRoutes": [
+    {
+      "from": "n11",
+      "to": "n12",
+      "via": [
+        "n09"
+      ]
+    }
+  ],
+  "doorway": {
+    "height": 100,
+    "belowFloor": 8,
+    "inset": 12
+  },
+  "abilityNotices": {
+    "dash": "主路与捷径均可用普通跳通过，本轮不设置能力门槛。"
+  },
+  "ui": {
+    "title": "鲸落万物生 · 整图灰盒",
+    "platformColor": "#b6bbc2",
+    "automaticCheckpoints": true,
+    "controls": "← → / A D 移动　按住空格跳得更高　↑ 进入 / 打通门框　J 攻击",
+    "note": "白色方块平台可站立；空心框为遭遇占位。A：04 ↔ 02　B：08 ↔ 05　回访：11 → 09 下层 → 12。",
+    "saveNotice": "换房自动存档，R 返回当前房间安全点。整图进度与原五房独立。",
+    "canvasLabel": "十二章空间灰盒。左右移动，按住空格跳跃，门框旁按上方向键通行或打通捷径，J攻击，R返回安全点，F全屏。"
+  },
+  "rooms": {
+    "n01": {
+      "name": "01 · 鲸口·须庭",
+      "chapter": 1,
+      "width": 1280,
+      "height": 900,
+      "hint": "从下层起点沿右侧梯田上行；普通跳即可登上三层平台。",
+      "hints": [],
+      "doors": {},
+      "entrances": {
+        "back-n01-n02": {
+          "x": 1140,
+          "floor": 540,
+          "facing": 1
+        }
+      },
+      "portals": [
+        {
+          "id": "n01-0-0",
+          "x": 1130,
+          "y": 460,
+          "w": 50,
+          "h": 80,
+          "to": "n02",
+          "arrival": "n01-0-0",
+          "kind": "advance",
+          "label": "→ 02 · 食道·折井",
+          "requiredAbilities": [],
+          "requiresVisited": [],
+          "sourceConnection": {
+            "from": "n01",
+            "to": "n02",
+            "kind": "advance",
+            "leg": 0
+          }
+        }
+      ],
+      "platforms": [
+        {
+          "x": 0,
+          "y": 780,
+          "w": 280,
+          "h": 120
+        },
+        {
+          "x": 280,
+          "y": 700,
+          "w": 180,
+          "h": 200
+        },
+        {
+          "x": 460,
+          "y": 620,
+          "w": 180,
+          "h": 280
+        },
+        {
+          "x": 640,
+          "y": 540,
+          "w": 640,
+          "h": 360
+        }
+      ],
+      "signs": [
+        {
+          "x": 50,
+          "y": 635,
+          "text": "第一章　灯在鲸须间"
+        }
+      ],
+      "items": [],
+      "enemies": [],
+      "markers": [],
+      "checkpoint": "n01",
+      "position": {
+        "x": 0,
+        "y": 2
+      },
+      "walkPaths": {
+        "spine": [
+          {
+            "x": 100,
+            "floor": 780
+          },
+          {
+            "x": 350,
+            "floor": 700
+          },
+          {
+            "x": 530,
+            "floor": 620
+          },
+          {
+            "x": 740,
+            "floor": 540
+          },
+          {
+            "x": 1140,
+            "floor": 540
+          }
+        ]
+      },
+      "source": {
+        "nodeId": "n01",
+        "requiredAbilities": null,
+        "sourceRef": {
+          "document": "story",
+          "startLine": 38,
+          "endLine": 57
+        }
+      }
+    },
+    "n02": {
+      "name": "02 · 食道·折井",
+      "chapter": 2,
+      "width": 1280,
+      "height": 900,
+      "hint": "折井从上层向下层贯通；中层的 A 门需要从 04 侧先打通。",
+      "hints": [],
+      "doors": {},
+      "entrances": {
+        "n01-0-0": {
+          "x": 80,
+          "floor": 300,
+          "facing": 1
+        },
+        "back-n02-n03": {
+          "x": 1150,
+          "floor": 780,
+          "facing": 1
+        },
+        "shortcut-A-open": {
+          "x": 550,
+          "floor": 540,
+          "facing": 1
+        }
+      },
+      "portals": [
+        {
+          "id": "back-n01-n02",
+          "x": 70,
+          "y": 220,
+          "w": 50,
+          "h": 80,
+          "to": "n01",
+          "arrival": "back-n01-n02",
+          "kind": "back",
+          "label": "返回 ← 01 · 鲸口·须庭",
+          "requiredAbilities": [],
+          "requiresVisited": [
+            "n01"
+          ]
+        },
+        {
+          "id": "n02-0-0",
+          "x": 1140,
+          "y": 700,
+          "w": 50,
+          "h": 80,
+          "to": "n03",
+          "arrival": "n02-0-0",
+          "kind": "advance",
+          "label": "↓ 03 · 胃室·蓄养腔",
+          "requiredAbilities": [],
+          "requiresVisited": [],
+          "sourceConnection": {
+            "from": "n02",
+            "to": "n03",
+            "kind": "advance",
+            "leg": 0
+          }
+        },
+        {
+          "id": "shortcut-A-back",
+          "x": 540,
+          "y": 460,
+          "w": 50,
+          "h": 80,
+          "to": "n04",
+          "arrival": "shortcut-A-back",
+          "kind": "shortcut",
+          "label": "捷径 A ↓ 04 · 肝缘·脂库暗腔",
+          "requiredAbilities": [],
+          "requiresVisited": [],
+          "requiresRoutes": [
+            "A"
+          ],
+          "lockedHint": "从 04 侧打通",
+          "routeLabel": "捷径 A"
+        }
+      ],
+      "platforms": [
+        {
+          "x": 0,
+          "y": 300,
+          "w": 160,
+          "h": 600
+        },
+        {
+          "x": 160,
+          "y": 380,
+          "w": 160,
+          "h": 520
+        },
+        {
+          "x": 320,
+          "y": 460,
+          "w": 160,
+          "h": 440
+        },
+        {
+          "x": 480,
+          "y": 540,
+          "w": 160,
+          "h": 360
+        },
+        {
+          "x": 640,
+          "y": 620,
+          "w": 160,
+          "h": 280
+        },
+        {
+          "x": 800,
+          "y": 700,
+          "w": 160,
+          "h": 200
+        },
+        {
+          "x": 960,
+          "y": 780,
+          "w": 320,
+          "h": 120
+        }
+      ],
+      "signs": [
+        {
+          "x": 50,
+          "y": 155,
+          "text": "第二章　守住路的人"
+        }
+      ],
+      "items": [],
+      "enemies": [],
+      "markers": [
+        {
+          "id": "n02-encounter",
+          "x": 850,
+          "y": 660,
+          "w": 40,
+          "h": 40,
+          "kind": "主要对抗",
+          "label": "负壳守卫，首次主要对抗"
+        }
+      ],
+      "checkpoint": "n02",
+      "position": {
+        "x": 1,
+        "y": 2
+      },
+      "walkPaths": {
+        "spine": [
+          {
+            "x": 80,
+            "floor": 300
+          },
+          {
+            "x": 220,
+            "floor": 380
+          },
+          {
+            "x": 380,
+            "floor": 460
+          },
+          {
+            "x": 550,
+            "floor": 540
+          },
+          {
+            "x": 710,
+            "floor": 620
+          },
+          {
+            "x": 870,
+            "floor": 700
+          },
+          {
+            "x": 1150,
+            "floor": 780
+          }
+        ]
+      },
+      "source": {
+        "nodeId": "n02",
+        "requiredAbilities": null,
+        "sourceRef": {
+          "document": "story",
+          "startLine": 58,
+          "endLine": 77
+        }
+      }
+    },
+    "n03": {
+      "name": "03 · 胃室·蓄养腔",
+      "chapter": 3,
+      "width": 1280,
+      "height": 900,
+      "hint": "先下到蓄养腔底，再沿右岸逐级爬出；两侧都能原路返回。",
+      "hints": [],
+      "doors": {},
+      "entrances": {
+        "n02-0-0": {
+          "x": 100,
+          "floor": 540,
+          "facing": 1
+        },
+        "back-n03-n04": {
+          "x": 1200,
+          "floor": 540,
+          "facing": 1
+        }
+      },
+      "portals": [
+        {
+          "id": "back-n02-n03",
+          "x": 90,
+          "y": 460,
+          "w": 50,
+          "h": 80,
+          "to": "n02",
+          "arrival": "back-n02-n03",
+          "kind": "back",
+          "label": "返回 ↑ 02 · 食道·折井",
+          "requiredAbilities": [],
+          "requiresVisited": [
+            "n02"
+          ]
+        },
+        {
+          "id": "n03-0-0",
+          "x": 1190,
+          "y": 460,
+          "w": 50,
+          "h": 80,
+          "to": "n04",
+          "arrival": "n03-0-0",
+          "kind": "advance",
+          "label": "→ 04 · 肝缘·脂库暗腔",
+          "requiredAbilities": [],
+          "requiresVisited": [],
+          "sourceConnection": {
+            "from": "n03",
+            "to": "n04",
+            "kind": "advance",
+            "leg": 0
+          }
+        }
+      ],
+      "platforms": [
+        {
+          "x": 0,
+          "y": 540,
+          "w": 240,
+          "h": 360
+        },
+        {
+          "x": 240,
+          "y": 620,
+          "w": 180,
+          "h": 280
+        },
+        {
+          "x": 420,
+          "y": 700,
+          "w": 180,
+          "h": 200
+        },
+        {
+          "x": 600,
+          "y": 780,
+          "w": 220,
+          "h": 120
+        },
+        {
+          "x": 820,
+          "y": 700,
+          "w": 180,
+          "h": 200
+        },
+        {
+          "x": 1000,
+          "y": 620,
+          "w": 140,
+          "h": 280
+        },
+        {
+          "x": 1140,
+          "y": 540,
+          "w": 140,
+          "h": 360
+        }
+      ],
+      "signs": [
+        {
+          "x": 50,
+          "y": 395,
+          "text": "第三章　被冲走的家"
+        }
+      ],
+      "items": [],
+      "enemies": [],
+      "markers": [],
+      "checkpoint": "n03",
+      "position": {
+        "x": 1,
+        "y": 3
+      },
+      "walkPaths": {
+        "spine": [
+          {
+            "x": 100,
+            "floor": 540
+          },
+          {
+            "x": 300,
+            "floor": 620
+          },
+          {
+            "x": 480,
+            "floor": 700
+          },
+          {
+            "x": 700,
+            "floor": 780
+          },
+          {
+            "x": 880,
+            "floor": 700
+          },
+          {
+            "x": 1060,
+            "floor": 620
+          },
+          {
+            "x": 1200,
+            "floor": 540
+          }
+        ]
+      },
+      "source": {
+        "nodeId": "n03",
+        "requiredAbilities": null,
+        "sourceRef": {
+          "document": "story",
+          "startLine": 78,
+          "endLine": 99
+        }
+      }
+    },
+    "n04": {
+      "name": "04 · 肝缘·脂库暗腔",
+      "chapter": 4,
+      "width": 1280,
+      "height": 900,
+      "hint": "上层浮台绕过可选占位，下层可直接穿过；上层中央的 A 门可打通回 02 的捷径。",
+      "hints": [],
+      "doors": {},
+      "entrances": {
+        "n03-0-0": {
+          "x": 90,
+          "floor": 780,
+          "facing": 1
+        },
+        "back-n04-n05": {
+          "x": 1240,
+          "floor": 780,
+          "facing": 1
+        },
+        "shortcut-A-back": {
+          "x": 740,
+          "floor": 500,
+          "facing": 1
+        }
+      },
+      "portals": [
+        {
+          "id": "back-n03-n04",
+          "x": 80,
+          "y": 700,
+          "w": 50,
+          "h": 80,
+          "to": "n03",
+          "arrival": "back-n03-n04",
+          "kind": "back",
+          "label": "返回 ← 03 · 胃室·蓄养腔",
+          "requiredAbilities": [],
+          "requiresVisited": [
+            "n03"
+          ]
+        },
+        {
+          "id": "n04-0-0",
+          "x": 1230,
+          "y": 700,
+          "w": 50,
+          "h": 80,
+          "to": "n05",
+          "arrival": "n04-0-0",
+          "kind": "advance",
+          "label": "↑ 05 · 肠道·环居腔",
+          "requiredAbilities": [],
+          "requiresVisited": [],
+          "sourceConnection": {
+            "from": "n04",
+            "to": "n05",
+            "kind": "advance",
+            "leg": 0
+          }
+        },
+        {
+          "id": "shortcut-A-open",
+          "x": 730,
+          "y": 420,
+          "w": 50,
+          "h": 80,
+          "to": "n02",
+          "arrival": "shortcut-A-open",
+          "kind": "shortcut",
+          "label": "捷径 A ↑ 02 · 食道·折井",
+          "requiredAbilities": [],
+          "requiresVisited": [],
+          "opensRoute": "A",
+          "routeLabel": "捷径 A"
+        }
+      ],
+      "platforms": [
+        {
+          "x": 0,
+          "y": 780,
+          "w": 1280,
+          "h": 120
+        },
+        {
+          "x": 200,
+          "y": 700,
+          "w": 140,
+          "h": 20
+        },
+        {
+          "x": 340,
+          "y": 620,
+          "w": 140,
+          "h": 20
+        },
+        {
+          "x": 480,
+          "y": 540,
+          "w": 140,
+          "h": 20
+        },
+        {
+          "x": 620,
+          "y": 500,
+          "w": 240,
+          "h": 20
+        },
+        {
+          "x": 860,
+          "y": 540,
+          "w": 120,
+          "h": 20
+        },
+        {
+          "x": 980,
+          "y": 620,
+          "w": 120,
+          "h": 20
+        },
+        {
+          "x": 1100,
+          "y": 700,
+          "w": 120,
+          "h": 20
+        }
+      ],
+      "signs": [
+        {
+          "x": 50,
+          "y": 635,
+          "text": "第四章　空下去的脂库"
+        },
+        {
+          "x": 610,
+          "y": 430,
+          "text": "上层 → 捷径 A / 下层 → 可选占位"
+        }
+      ],
+      "items": [],
+      "enemies": [],
+      "markers": [
+        {
+          "id": "n04-encounter",
+          "x": 680,
+          "y": 740,
+          "w": 40,
+          "h": 40,
+          "kind": "可选遭遇",
+          "label": "可选清理观察位置"
+        }
+      ],
+      "checkpoint": "n04",
+      "position": {
+        "x": 2,
+        "y": 3
+      },
+      "walkPaths": {
+        "spine": [
+          {
+            "x": 90,
+            "floor": 780
+          },
+          {
+            "x": 270,
+            "floor": 700
+          },
+          {
+            "x": 410,
+            "floor": 620
+          },
+          {
+            "x": 550,
+            "floor": 540
+          },
+          {
+            "x": 740,
+            "floor": 500
+          },
+          {
+            "x": 920,
+            "floor": 540
+          },
+          {
+            "x": 1040,
+            "floor": 620
+          },
+          {
+            "x": 1160,
+            "floor": 700
+          },
+          {
+            "x": 1240,
+            "floor": 780
+          }
+        ],
+        "lower": [
+          {
+            "x": 90,
+            "floor": 780
+          },
+          {
+            "x": 680,
+            "floor": 780
+          },
+          {
+            "x": 1240,
+            "floor": 780
+          }
+        ]
+      },
+      "source": {
+        "nodeId": "n04",
+        "requiredAbilities": null,
+        "sourceRef": {
+          "document": "story",
+          "startLine": 100,
+          "endLine": 119
+        }
+      }
+    },
+    "n05": {
+      "name": "05 · 肠道·环居腔",
+      "chapter": 5,
+      "width": 1280,
+      "height": 900,
+      "hint": "经过下层对抗占位后向右上攀升；B 门要从 08 侧打开。",
+      "hints": [],
+      "doors": {},
+      "entrances": {
+        "n04-0-0": {
+          "x": 100,
+          "floor": 780,
+          "facing": 1
+        },
+        "back-n05-n06": {
+          "x": 1190,
+          "floor": 420,
+          "facing": 1
+        },
+        "shortcut-B-open": {
+          "x": 990,
+          "floor": 420,
+          "facing": 1
+        }
+      },
+      "portals": [
+        {
+          "id": "back-n04-n05",
+          "x": 90,
+          "y": 700,
+          "w": 50,
+          "h": 80,
+          "to": "n04",
+          "arrival": "back-n04-n05",
+          "kind": "back",
+          "label": "返回 ↓ 04 · 肝缘·脂库暗腔",
+          "requiredAbilities": [],
+          "requiresVisited": [
+            "n04"
+          ]
+        },
+        {
+          "id": "n05-0-0",
+          "x": 1180,
+          "y": 340,
+          "w": 50,
+          "h": 80,
+          "to": "n06",
+          "arrival": "n05-0-0",
+          "kind": "advance",
+          "label": "→ 06 · 肺缘·浮膜腔",
+          "requiredAbilities": [],
+          "requiresVisited": [],
+          "sourceConnection": {
+            "from": "n05",
+            "to": "n06",
+            "kind": "advance",
+            "leg": 0
+          }
+        },
+        {
+          "id": "shortcut-B-back",
+          "x": 980,
+          "y": 340,
+          "w": 50,
+          "h": 80,
+          "to": "n08",
+          "arrival": "shortcut-B-back",
+          "kind": "shortcut",
+          "label": "捷径 B ↑ 08 · 肋间·骨穹腔",
+          "requiredAbilities": [],
+          "requiresVisited": [],
+          "requiresRoutes": [
+            "B"
+          ],
+          "lockedHint": "从 08 侧打通",
+          "routeLabel": "捷径 B"
+        }
+      ],
+      "platforms": [
+        {
+          "x": 0,
+          "y": 780,
+          "w": 240,
+          "h": 120
+        },
+        {
+          "x": 240,
+          "y": 700,
+          "w": 160,
+          "h": 200
+        },
+        {
+          "x": 400,
+          "y": 620,
+          "w": 160,
+          "h": 280
+        },
+        {
+          "x": 560,
+          "y": 540,
+          "w": 160,
+          "h": 360
+        },
+        {
+          "x": 720,
+          "y": 460,
+          "w": 160,
+          "h": 440
+        },
+        {
+          "x": 880,
+          "y": 420,
+          "w": 400,
+          "h": 480
+        }
+      ],
+      "signs": [
+        {
+          "x": 50,
+          "y": 635,
+          "text": "第五章　搬不走的巢"
+        }
+      ],
+      "items": [],
+      "enemies": [],
+      "markers": [
+        {
+          "id": "n05-encounter",
+          "x": 150,
+          "y": 740,
+          "w": 40,
+          "h": 40,
+          "kind": "主要对抗",
+          "label": "缠巢鳗，主要野生对抗"
+        }
+      ],
+      "checkpoint": "n05",
+      "position": {
+        "x": 2,
+        "y": 2
+      },
+      "walkPaths": {
+        "spine": [
+          {
+            "x": 100,
+            "floor": 780
+          },
+          {
+            "x": 310,
+            "floor": 700
+          },
+          {
+            "x": 470,
+            "floor": 620
+          },
+          {
+            "x": 630,
+            "floor": 540
+          },
+          {
+            "x": 790,
+            "floor": 460
+          },
+          {
+            "x": 990,
+            "floor": 420
+          },
+          {
+            "x": 1190,
+            "floor": 420
+          }
+        ]
+      },
+      "source": {
+        "nodeId": "n05",
+        "requiredAbilities": null,
+        "sourceRef": {
+          "document": "story",
+          "startLine": 120,
+          "endLine": 141
+        }
+      }
+    },
+    "n06": {
+      "name": "06 · 肺缘·浮膜腔",
+      "chapter": 6,
+      "width": 1280,
+      "height": 900,
+      "hint": "左侧跳台直达上层出口；也可走下层凹腔，从最右侧跳台折返上层。",
+      "hints": [],
+      "doors": {},
+      "entrances": {
+        "n05-0-0": {
+          "x": 100,
+          "floor": 780,
+          "facing": 1
+        },
+        "back-n06-n07": {
+          "x": 740,
+          "floor": 500,
+          "facing": 1
+        }
+      },
+      "portals": [
+        {
+          "id": "back-n05-n06",
+          "x": 90,
+          "y": 700,
+          "w": 50,
+          "h": 80,
+          "to": "n05",
+          "arrival": "back-n05-n06",
+          "kind": "back",
+          "label": "返回 ← 05 · 肠道·环居腔",
+          "requiredAbilities": [],
+          "requiresVisited": [
+            "n05"
+          ]
+        },
+        {
+          "id": "n06-0-0",
+          "x": 730,
+          "y": 420,
+          "w": 50,
+          "h": 80,
+          "to": "n07",
+          "arrival": "n06-0-0",
+          "kind": "advance",
+          "label": "↑ 07 · 心外·泵庭",
+          "requiredAbilities": [],
+          "requiresVisited": [],
+          "sourceConnection": {
+            "from": "n06",
+            "to": "n07",
+            "kind": "advance",
+            "leg": 0
+          }
+        }
+      ],
+      "platforms": [
+        {
+          "x": 0,
+          "y": 780,
+          "w": 1280,
+          "h": 120
+        },
+        {
+          "x": 200,
+          "y": 700,
+          "w": 140,
+          "h": 20
+        },
+        {
+          "x": 340,
+          "y": 620,
+          "w": 140,
+          "h": 20
+        },
+        {
+          "x": 480,
+          "y": 540,
+          "w": 140,
+          "h": 20
+        },
+        {
+          "x": 620,
+          "y": 500,
+          "w": 240,
+          "h": 20
+        },
+        {
+          "x": 860,
+          "y": 540,
+          "w": 120,
+          "h": 20
+        },
+        {
+          "x": 980,
+          "y": 620,
+          "w": 120,
+          "h": 20
+        },
+        {
+          "x": 1100,
+          "y": 700,
+          "w": 120,
+          "h": 20
+        }
+      ],
+      "signs": [
+        {
+          "x": 50,
+          "y": 635,
+          "text": "第六章　外海仍在流动"
+        },
+        {
+          "x": 600,
+          "y": 430,
+          "text": "上层出口 / 下层凹腔向右绕回"
+        }
+      ],
+      "items": [],
+      "enemies": [],
+      "markers": [
+        {
+          "id": "n06-encounter",
+          "x": 900,
+          "y": 740,
+          "w": 40,
+          "h": 40,
+          "kind": "可选遭遇",
+          "label": "可选膜上捕食者遭遇"
+        }
+      ],
+      "checkpoint": "n06",
+      "position": {
+        "x": 3,
+        "y": 2
+      },
+      "walkPaths": {
+        "spine": [
+          {
+            "x": 100,
+            "floor": 780
+          },
+          {
+            "x": 270,
+            "floor": 700
+          },
+          {
+            "x": 410,
+            "floor": 620
+          },
+          {
+            "x": 550,
+            "floor": 540
+          },
+          {
+            "x": 740,
+            "floor": 500
+          }
+        ],
+        "lower": [
+          {
+            "x": 100,
+            "floor": 780
+          },
+          {
+            "x": 900,
+            "floor": 780
+          },
+          {
+            "x": 1240,
+            "floor": 780
+          },
+          {
+            "x": 1160,
+            "floor": 700
+          },
+          {
+            "x": 1040,
+            "floor": 620
+          },
+          {
+            "x": 920,
+            "floor": 540
+          },
+          {
+            "x": 740,
+            "floor": 500
+          }
+        ]
+      },
+      "source": {
+        "nodeId": "n06",
+        "requiredAbilities": null,
+        "sourceRef": {
+          "document": "story",
+          "startLine": 142,
+          "endLine": 161
+        }
+      }
+    },
+    "n07": {
+      "name": "07 · 心外·泵庭",
+      "chapter": 7,
+      "width": 1280,
+      "height": 900,
+      "hint": "泵庭沿左上方向逐级抬升；由底层入口走到上层骨穹通道。",
+      "hints": [],
+      "doors": {},
+      "entrances": {
+        "n06-0-0": {
+          "x": 1150,
+          "floor": 780,
+          "facing": -1
+        },
+        "back-n07-n08": {
+          "x": 80,
+          "floor": 300,
+          "facing": -1
+        }
+      },
+      "portals": [
+        {
+          "id": "back-n06-n07",
+          "x": 1140,
+          "y": 700,
+          "w": 50,
+          "h": 80,
+          "to": "n06",
+          "arrival": "back-n06-n07",
+          "kind": "back",
+          "label": "返回 ↓ 06 · 肺缘·浮膜腔",
+          "requiredAbilities": [],
+          "requiresVisited": [
+            "n06"
+          ]
+        },
+        {
+          "id": "n07-0-0",
+          "x": 70,
+          "y": 220,
+          "w": 50,
+          "h": 80,
+          "to": "n08",
+          "arrival": "n07-0-0",
+          "kind": "advance",
+          "label": "← 08 · 肋间·骨穹腔",
+          "requiredAbilities": [],
+          "requiresVisited": [],
+          "sourceConnection": {
+            "from": "n07",
+            "to": "n08",
+            "kind": "advance",
+            "leg": 0
+          }
+        }
+      ],
+      "platforms": [
+        {
+          "x": 0,
+          "y": 300,
+          "w": 160,
+          "h": 600
+        },
+        {
+          "x": 160,
+          "y": 380,
+          "w": 160,
+          "h": 520
+        },
+        {
+          "x": 320,
+          "y": 460,
+          "w": 160,
+          "h": 440
+        },
+        {
+          "x": 480,
+          "y": 540,
+          "w": 160,
+          "h": 360
+        },
+        {
+          "x": 640,
+          "y": 620,
+          "w": 160,
+          "h": 280
+        },
+        {
+          "x": 800,
+          "y": 700,
+          "w": 160,
+          "h": 200
+        },
+        {
+          "x": 960,
+          "y": 780,
+          "w": 320,
+          "h": 120
+        }
+      ],
+      "signs": [
+        {
+          "x": 50,
+          "y": 635,
+          "text": "第七章　泵庭里的旧办法"
+        }
+      ],
+      "items": [],
+      "enemies": [],
+      "markers": [],
+      "checkpoint": "n07",
+      "position": {
+        "x": 3,
+        "y": 1
+      },
+      "walkPaths": {
+        "spine": [
+          {
+            "x": 1150,
+            "floor": 780
+          },
+          {
+            "x": 870,
+            "floor": 700
+          },
+          {
+            "x": 710,
+            "floor": 620
+          },
+          {
+            "x": 550,
+            "floor": 540
+          },
+          {
+            "x": 380,
+            "floor": 460
+          },
+          {
+            "x": 220,
+            "floor": 380
+          },
+          {
+            "x": 80,
+            "floor": 300
+          }
+        ]
+      },
+      "source": {
+        "nodeId": "n07",
+        "requiredAbilities": null,
+        "sourceRef": {
+          "document": "story",
+          "startLine": 162,
+          "endLine": 183
+        }
+      }
+    },
+    "n08": {
+      "name": "08 · 肋间·骨穹腔",
+      "chapter": 8,
+      "width": 1280,
+      "height": 900,
+      "hint": "B 捷径在下层入口附近；穿过对抗占位后，沿左侧梯田登上回流通道。",
+      "hints": [],
+      "doors": {},
+      "entrances": {
+        "n07-0-0": {
+          "x": 1150,
+          "floor": 780,
+          "facing": -1
+        },
+        "back-n08-n09": {
+          "x": 100,
+          "floor": 420,
+          "facing": -1
+        },
+        "shortcut-B-back": {
+          "x": 1020,
+          "floor": 780,
+          "facing": 1
+        }
+      },
+      "portals": [
+        {
+          "id": "back-n07-n08",
+          "x": 1140,
+          "y": 700,
+          "w": 50,
+          "h": 80,
+          "to": "n07",
+          "arrival": "back-n07-n08",
+          "kind": "back",
+          "label": "返回 → 07 · 心外·泵庭",
+          "requiredAbilities": [],
+          "requiresVisited": [
+            "n07"
+          ]
+        },
+        {
+          "id": "n08-0-0",
+          "x": 90,
+          "y": 340,
+          "w": 50,
+          "h": 80,
+          "to": "n09",
+          "arrival": "n08-0-0",
+          "kind": "advance",
+          "label": "← 09 · 脊椎·回流长腔",
+          "requiredAbilities": [],
+          "requiresVisited": [],
+          "sourceConnection": {
+            "from": "n08",
+            "to": "n09",
+            "kind": "advance",
+            "leg": 0
+          }
+        },
+        {
+          "id": "shortcut-B-open",
+          "x": 1010,
+          "y": 700,
+          "w": 50,
+          "h": 80,
+          "to": "n05",
+          "arrival": "shortcut-B-open",
+          "kind": "shortcut",
+          "label": "捷径 B ↓ 05 · 肠道·环居腔",
+          "requiredAbilities": [],
+          "requiresVisited": [],
+          "opensRoute": "B",
+          "routeLabel": "捷径 B"
+        }
+      ],
+      "platforms": [
+        {
+          "x": 0,
+          "y": 420,
+          "w": 240,
+          "h": 480
+        },
+        {
+          "x": 240,
+          "y": 460,
+          "w": 120,
+          "h": 440
+        },
+        {
+          "x": 360,
+          "y": 540,
+          "w": 120,
+          "h": 360
+        },
+        {
+          "x": 480,
+          "y": 620,
+          "w": 120,
+          "h": 280
+        },
+        {
+          "x": 600,
+          "y": 700,
+          "w": 120,
+          "h": 200
+        },
+        {
+          "x": 720,
+          "y": 780,
+          "w": 560,
+          "h": 120
+        }
+      ],
+      "signs": [
+        {
+          "x": 50,
+          "y": 635,
+          "text": "第八章　骨梁下的名字"
+        }
+      ],
+      "items": [],
+      "enemies": [],
+      "markers": [
+        {
+          "id": "n08-encounter",
+          "x": 830,
+          "y": 740,
+          "w": 40,
+          "h": 40,
+          "kind": "主要对抗",
+          "label": "封梁卫，主要武装对抗"
+        }
+      ],
+      "checkpoint": "n08",
+      "position": {
+        "x": 2,
+        "y": 1
+      },
+      "walkPaths": {
+        "spine": [
+          {
+            "x": 1150,
+            "floor": 780
+          },
+          {
+            "x": 1020,
+            "floor": 780
+          },
+          {
+            "x": 660,
+            "floor": 700
+          },
+          {
+            "x": 540,
+            "floor": 620
+          },
+          {
+            "x": 420,
+            "floor": 540
+          },
+          {
+            "x": 290,
+            "floor": 460
+          },
+          {
+            "x": 100,
+            "floor": 420
+          }
+        ]
+      },
+      "source": {
+        "nodeId": "n08",
+        "requiredAbilities": null,
+        "sourceRef": {
+          "document": "story",
+          "startLine": 184,
+          "endLine": 207
+        }
+      }
+    },
+    "n09": {
+      "name": "09 · 脊椎·回流长腔",
+      "chapter": 9,
+      "width": 1280,
+      "height": 1040,
+      "hint": "首次从右侧中层进入，沿左侧跳台去 10；11 回访后从最下层通道去 12。",
+      "hints": [],
+      "doors": {},
+      "entrances": {
+        "n08-0-0": {
+          "x": 1150,
+          "floor": 600,
+          "facing": -1
+        },
+        "back-n09-n10": {
+          "x": 100,
+          "floor": 280,
+          "facing": -1
+        },
+        "n11-0-0": {
+          "x": 1200,
+          "floor": 280,
+          "facing": -1
+        },
+        "back-n09-n12": {
+          "x": 100,
+          "floor": 920,
+          "facing": -1
+        }
+      },
+      "portals": [
+        {
+          "id": "back-n08-n09",
+          "x": 1140,
+          "y": 520,
+          "w": 50,
+          "h": 80,
+          "to": "n08",
+          "arrival": "back-n08-n09",
+          "kind": "back",
+          "label": "返回 → 08 · 肋间·骨穹腔",
+          "requiredAbilities": [],
+          "requiresVisited": [
+            "n08"
+          ]
+        },
+        {
+          "id": "n09-0-0",
+          "x": 90,
+          "y": 200,
+          "w": 50,
+          "h": 80,
+          "to": "n10",
+          "arrival": "n09-0-0",
+          "kind": "advance",
+          "label": "↑ 10 · 颅内·旧歌腔",
+          "requiredAbilities": [],
+          "requiresVisited": [],
+          "sourceConnection": {
+            "from": "n09",
+            "to": "n10",
+            "kind": "advance",
+            "leg": 0
+          }
+        },
+        {
+          "id": "back-n11-n09",
+          "x": 1190,
+          "y": 200,
+          "w": 50,
+          "h": 80,
+          "to": "n11",
+          "arrival": "back-n11-n09",
+          "kind": "back",
+          "label": "返回 ↑ 11 · 听骨·回声室",
+          "requiredAbilities": [],
+          "requiresVisited": [
+            "n11"
+          ],
+          "lockedHint": "经过 11 后开放"
+        },
+        {
+          "id": "n11-0-1",
+          "x": 90,
+          "y": 840,
+          "w": 50,
+          "h": 80,
+          "to": "n12",
+          "arrival": "n11-0-1",
+          "kind": "return",
+          "label": "回访 ← 12 · 尾根·主闸腔",
+          "requiredAbilities": [],
+          "requiresVisited": [
+            "n11"
+          ],
+          "lockedHint": "经过 11 后开放",
+          "sourceConnection": {
+            "from": "n11",
+            "to": "n12",
+            "kind": "return",
+            "via": [
+              "n09"
+            ],
+            "note": "经已通过的回流长腔折返，再抵达尾根；返程不重复刷新整组关卡战，连接长度待设计。",
+            "leg": 1
+          }
+        }
+      ],
+      "platforms": [
+        {
+          "x": 0,
+          "y": 920,
+          "w": 1280,
+          "h": 120
+        },
+        {
+          "x": 640,
+          "y": 600,
+          "w": 640,
+          "h": 20
+        },
+        {
+          "x": 500,
+          "y": 520,
+          "w": 140,
+          "h": 20
+        },
+        {
+          "x": 360,
+          "y": 440,
+          "w": 140,
+          "h": 20
+        },
+        {
+          "x": 220,
+          "y": 360,
+          "w": 140,
+          "h": 20
+        },
+        {
+          "x": 0,
+          "y": 280,
+          "w": 220,
+          "h": 20
+        },
+        {
+          "x": 1120,
+          "y": 280,
+          "w": 160,
+          "h": 20
+        },
+        {
+          "x": 1000,
+          "y": 360,
+          "w": 120,
+          "h": 20
+        },
+        {
+          "x": 880,
+          "y": 440,
+          "w": 120,
+          "h": 20
+        },
+        {
+          "x": 760,
+          "y": 520,
+          "w": 120,
+          "h": 20
+        },
+        {
+          "x": 280,
+          "y": 840,
+          "w": 120,
+          "h": 20
+        },
+        {
+          "x": 400,
+          "y": 760,
+          "w": 120,
+          "h": 20
+        },
+        {
+          "x": 520,
+          "y": 680,
+          "w": 120,
+          "h": 20
+        }
+      ],
+      "signs": [
+        {
+          "x": 50,
+          "y": 455,
+          "text": "第九章　回来的水"
+        },
+        {
+          "x": 30,
+          "y": 200,
+          "text": "上层 → 10"
+        },
+        {
+          "x": 100,
+          "y": 855,
+          "text": "下层 → 12（11 回访后开放）"
+        }
+      ],
+      "items": [],
+      "enemies": [],
+      "markers": [],
+      "checkpoint": "n09",
+      "position": {
+        "x": 1,
+        "y": 1
+      },
+      "walkPaths": {
+        "spine": [
+          {
+            "x": 1150,
+            "floor": 600
+          },
+          {
+            "x": 700,
+            "floor": 600
+          },
+          {
+            "x": 570,
+            "floor": 520
+          },
+          {
+            "x": 430,
+            "floor": 440
+          },
+          {
+            "x": 290,
+            "floor": 360
+          },
+          {
+            "x": 100,
+            "floor": 280
+          }
+        ],
+        "lower": [
+          {
+            "x": 1150,
+            "floor": 600
+          },
+          {
+            "x": 700,
+            "floor": 600
+          },
+          {
+            "x": 580,
+            "floor": 680
+          },
+          {
+            "x": 460,
+            "floor": 760
+          },
+          {
+            "x": 340,
+            "floor": 840
+          },
+          {
+            "x": 180,
+            "floor": 920
+          },
+          {
+            "x": 100,
+            "floor": 920
+          }
+        ],
+        "revisit": [
+          {
+            "x": 1200,
+            "floor": 280
+          },
+          {
+            "x": 1060,
+            "floor": 360
+          },
+          {
+            "x": 940,
+            "floor": 440
+          },
+          {
+            "x": 820,
+            "floor": 520
+          },
+          {
+            "x": 700,
+            "floor": 600
+          },
+          {
+            "x": 580,
+            "floor": 680
+          },
+          {
+            "x": 460,
+            "floor": 760
+          },
+          {
+            "x": 340,
+            "floor": 840
+          },
+          {
+            "x": 180,
+            "floor": 920
+          },
+          {
+            "x": 100,
+            "floor": 920
+          }
+        ],
+        "climb": [
+          {
+            "x": 100,
+            "floor": 920
+          },
+          {
+            "x": 240,
+            "floor": 920
+          },
+          {
+            "x": 340,
+            "floor": 840
+          },
+          {
+            "x": 460,
+            "floor": 760
+          },
+          {
+            "x": 580,
+            "floor": 680
+          },
+          {
+            "x": 700,
+            "floor": 600
+          }
+        ]
+      },
+      "source": {
+        "nodeId": "n09",
+        "requiredAbilities": null,
+        "sourceRef": {
+          "document": "story",
+          "startLine": 208,
+          "endLine": 229
+        }
+      }
+    },
+    "n10": {
+      "name": "10 · 颅内·旧歌腔",
+      "chapter": 10,
+      "width": 1280,
+      "height": 900,
+      "hint": "旧歌腔的上层长廊连接 11，下层台阶可返回 09。",
+      "hints": [],
+      "doors": {},
+      "entrances": {
+        "n09-0-0": {
+          "x": 100,
+          "floor": 580,
+          "facing": 1
+        },
+        "back-n10-n11": {
+          "x": 1140,
+          "floor": 340,
+          "facing": 1
+        }
+      },
+      "portals": [
+        {
+          "id": "back-n09-n10",
+          "x": 90,
+          "y": 500,
+          "w": 50,
+          "h": 80,
+          "to": "n09",
+          "arrival": "back-n09-n10",
+          "kind": "back",
+          "label": "返回 ↓ 09 · 脊椎·回流长腔",
+          "requiredAbilities": [],
+          "requiresVisited": [
+            "n09"
+          ]
+        },
+        {
+          "id": "n10-0-0",
+          "x": 1130,
+          "y": 260,
+          "w": 50,
+          "h": 80,
+          "to": "n11",
+          "arrival": "n10-0-0",
+          "kind": "advance",
+          "label": "→ 11 · 听骨·回声室",
+          "requiredAbilities": [],
+          "requiresVisited": [],
+          "sourceConnection": {
+            "from": "n10",
+            "to": "n11",
+            "kind": "advance",
+            "leg": 0
+          }
+        }
+      ],
+      "platforms": [
+        {
+          "x": 0,
+          "y": 580,
+          "w": 280,
+          "h": 320
+        },
+        {
+          "x": 280,
+          "y": 500,
+          "w": 180,
+          "h": 400
+        },
+        {
+          "x": 460,
+          "y": 420,
+          "w": 180,
+          "h": 480
+        },
+        {
+          "x": 640,
+          "y": 340,
+          "w": 640,
+          "h": 560
+        }
+      ],
+      "signs": [
+        {
+          "x": 50,
+          "y": 435,
+          "text": "第十章　海面曾经很亮"
+        }
+      ],
+      "items": [],
+      "enemies": [],
+      "markers": [],
+      "checkpoint": "n10",
+      "position": {
+        "x": 1,
+        "y": 0
+      },
+      "walkPaths": {
+        "spine": [
+          {
+            "x": 100,
+            "floor": 580
+          },
+          {
+            "x": 350,
+            "floor": 500
+          },
+          {
+            "x": 530,
+            "floor": 420
+          },
+          {
+            "x": 740,
+            "floor": 340
+          },
+          {
+            "x": 1140,
+            "floor": 340
+          }
+        ]
+      },
+      "source": {
+        "nodeId": "n10",
+        "requiredAbilities": null,
+        "sourceRef": {
+          "document": "story",
+          "startLine": 230,
+          "endLine": 249
+        }
+      }
+    },
+    "n11": {
+      "name": "11 · 听骨·回声室",
+      "chapter": 11,
+      "width": 1280,
+      "height": 900,
+      "hint": "沿折返跳台走到右下出口，返回 09 的独立上层入口，再下行去 12。",
+      "hints": [],
+      "doors": {},
+      "entrances": {
+        "n10-0-0": {
+          "x": 80,
+          "floor": 300,
+          "facing": 1
+        },
+        "back-n11-n09": {
+          "x": 1150,
+          "floor": 780,
+          "facing": 1
+        }
+      },
+      "portals": [
+        {
+          "id": "back-n10-n11",
+          "x": 70,
+          "y": 220,
+          "w": 50,
+          "h": 80,
+          "to": "n10",
+          "arrival": "back-n10-n11",
+          "kind": "back",
+          "label": "返回 ← 10 · 颅内·旧歌腔",
+          "requiredAbilities": [],
+          "requiresVisited": [
+            "n10"
+          ]
+        },
+        {
+          "id": "n11-0-0",
+          "x": 1140,
+          "y": 700,
+          "w": 50,
+          "h": 80,
+          "to": "n09",
+          "arrival": "n11-0-0",
+          "kind": "return",
+          "label": "回访 ↓ 09 · 脊椎·回流长腔",
+          "requiredAbilities": [],
+          "requiresVisited": [
+            "n11"
+          ],
+          "lockedHint": "经过 11 后开放",
+          "sourceConnection": {
+            "from": "n11",
+            "to": "n12",
+            "kind": "return",
+            "via": [
+              "n09"
+            ],
+            "note": "经已通过的回流长腔折返，再抵达尾根；返程不重复刷新整组关卡战，连接长度待设计。",
+            "leg": 0
+          }
+        }
+      ],
+      "platforms": [
+        {
+          "x": 0,
+          "y": 300,
+          "w": 160,
+          "h": 600
+        },
+        {
+          "x": 160,
+          "y": 380,
+          "w": 160,
+          "h": 520
+        },
+        {
+          "x": 320,
+          "y": 460,
+          "w": 160,
+          "h": 440
+        },
+        {
+          "x": 480,
+          "y": 540,
+          "w": 160,
+          "h": 360
+        },
+        {
+          "x": 640,
+          "y": 620,
+          "w": 160,
+          "h": 280
+        },
+        {
+          "x": 800,
+          "y": 700,
+          "w": 160,
+          "h": 200
+        },
+        {
+          "x": 960,
+          "y": 780,
+          "w": 320,
+          "h": 120
+        }
+      ],
+      "signs": [
+        {
+          "x": 50,
+          "y": 155,
+          "text": "第十一章　听见停顿的地方"
+        }
+      ],
+      "items": [],
+      "enemies": [],
+      "markers": [],
+      "checkpoint": "n11",
+      "position": {
+        "x": 2,
+        "y": 0
+      },
+      "walkPaths": {
+        "spine": [
+          {
+            "x": 80,
+            "floor": 300
+          },
+          {
+            "x": 220,
+            "floor": 380
+          },
+          {
+            "x": 380,
+            "floor": 460
+          },
+          {
+            "x": 550,
+            "floor": 540
+          },
+          {
+            "x": 710,
+            "floor": 620
+          },
+          {
+            "x": 870,
+            "floor": 700
+          },
+          {
+            "x": 1150,
+            "floor": 780
+          }
+        ]
+      },
+      "source": {
+        "nodeId": "n11",
+        "requiredAbilities": null,
+        "sourceRef": {
+          "document": "story",
+          "startLine": 250,
+          "endLine": 267
+        }
+      }
+    },
+    "n12": {
+      "name": "12 · 尾根·主闸腔",
+      "chapter": 12,
+      "width": 1280,
+      "height": 900,
+      "hint": "穿过终章对抗占位，左侧高台为本轮灰盒通路终点。",
+      "hints": [],
+      "doors": {},
+      "entrances": {
+        "n11-0-1": {
+          "x": 1150,
+          "floor": 780,
+          "facing": -1
+        }
+      },
+      "portals": [
+        {
+          "id": "back-n09-n12",
+          "x": 1140,
+          "y": 700,
+          "w": 50,
+          "h": 80,
+          "to": "n09",
+          "arrival": "back-n09-n12",
+          "kind": "back",
+          "label": "返回 → 09 · 脊椎·回流长腔",
+          "requiredAbilities": [],
+          "requiresVisited": [
+            "n09",
+            "n11"
+          ],
+          "lockedHint": "经过 11 后开放"
+        }
+      ],
+      "platforms": [
+        {
+          "x": 0,
+          "y": 420,
+          "w": 240,
+          "h": 480
+        },
+        {
+          "x": 240,
+          "y": 460,
+          "w": 120,
+          "h": 440
+        },
+        {
+          "x": 360,
+          "y": 540,
+          "w": 120,
+          "h": 360
+        },
+        {
+          "x": 480,
+          "y": 620,
+          "w": 120,
+          "h": 280
+        },
+        {
+          "x": 600,
+          "y": 700,
+          "w": 120,
+          "h": 200
+        },
+        {
+          "x": 720,
+          "y": 780,
+          "w": 560,
+          "h": 120
+        }
+      ],
+      "signs": [
+        {
+          "x": 50,
+          "y": 635,
+          "text": "第十二章　闸后有路"
+        },
+        {
+          "x": 45,
+          "y": 355,
+          "text": "通路终点 · 可原路返回"
+        }
+      ],
+      "items": [],
+      "enemies": [],
+      "markers": [
+        {
+          "id": "n12-encounter",
+          "x": 840,
+          "y": 740,
+          "w": 40,
+          "h": 40,
+          "kind": "主要对抗",
+          "label": "老守护者，最终主要对抗"
+        }
+      ],
+      "checkpoint": "n12",
+      "position": {
+        "x": 0,
+        "y": 1
+      },
+      "walkPaths": {
+        "spine": [
+          {
+            "x": 1150,
+            "floor": 780
+          },
+          {
+            "x": 660,
+            "floor": 700
+          },
+          {
+            "x": 540,
+            "floor": 620
+          },
+          {
+            "x": 420,
+            "floor": 540
+          },
+          {
+            "x": 290,
+            "floor": 460
+          },
+          {
+            "x": 100,
+            "floor": 420
+          }
+        ]
+      },
+      "source": {
+        "nodeId": "n12",
+        "requiredAbilities": null,
+        "sourceRef": {
+          "document": "story",
+          "startLine": 268,
+          "endLine": 303
+        }
+      }
+    }
+  },
+  "checkpoints": {
+    "n01": {
+      "room": "n01",
+      "x": 100,
+      "floor": 780,
+      "name": "01 · 鲸口·须庭"
+    },
+    "n02": {
+      "room": "n02",
+      "x": 80,
+      "floor": 300,
+      "name": "02 · 食道·折井"
+    },
+    "n03": {
+      "room": "n03",
+      "x": 100,
+      "floor": 540,
+      "name": "03 · 胃室·蓄养腔"
+    },
+    "n04": {
+      "room": "n04",
+      "x": 90,
+      "floor": 780,
+      "name": "04 · 肝缘·脂库暗腔"
+    },
+    "n05": {
+      "room": "n05",
+      "x": 100,
+      "floor": 780,
+      "name": "05 · 肠道·环居腔"
+    },
+    "n06": {
+      "room": "n06",
+      "x": 100,
+      "floor": 780,
+      "name": "06 · 肺缘·浮膜腔"
+    },
+    "n07": {
+      "room": "n07",
+      "x": 1150,
+      "floor": 780,
+      "name": "07 · 心外·泵庭"
+    },
+    "n08": {
+      "room": "n08",
+      "x": 1150,
+      "floor": 780,
+      "name": "08 · 肋间·骨穹腔"
+    },
+    "n09": {
+      "room": "n09",
+      "x": 1150,
+      "floor": 600,
+      "name": "09 · 脊椎·回流长腔"
+    },
+    "n10": {
+      "room": "n10",
+      "x": 100,
+      "floor": 580,
+      "name": "10 · 颅内·旧歌腔"
+    },
+    "n11": {
+      "room": "n11",
+      "x": 80,
+      "floor": 300,
+      "name": "11 · 听骨·回声室"
+    },
+    "n12": {
+      "room": "n12",
+      "x": 1150,
+      "floor": 780,
+      "name": "12 · 尾根·主闸腔"
+    }
+  }
+}
