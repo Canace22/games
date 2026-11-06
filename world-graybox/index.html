@@ -91,6 +91,15 @@
     #collection-status { color: #e7ca86; }
     #new-game { font-size: 12px; color: #b5becc; }
     .note { margin: 8px 0 0; color: #8793a4; font-size: 12px; }
+    header.with-map { flex-wrap: wrap; }
+    #world-map { width: min(1100px, calc(100vw - 32px)); max-height: calc(100vh - 32px); padding: 18px; background: #202630; color: #e7e9ed; border: 1px solid #566173; }
+    #world-map::backdrop { background: rgba(10, 14, 20, .8); }
+    #world-map h2 { margin: 0; font-size: 18px; }
+    #map-location { margin: 0 0 12px; color: #8ed0ff; }
+    #map-graph { overflow: auto; }
+    #map-graph svg { display: block; width: 100%; min-width: 760px; height: auto; }
+    #map-graph text { font-family: system-ui, -apple-system, "Microsoft YaHei", sans-serif; }
+    .map-legend { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 12px; color: #a2abb9; font-size: 12px; }
     @media (max-width: 600px) { main { margin-top: 14px; } .sub { display: block; margin-left: 0; } }
   </style>
 </head>
@@ -99,6 +108,7 @@
     <header>
       <h1><span id="game-title">探索试验场</span><span class="sub" id="room-name">读取地图中</span></h1>
       <div class="actions">
+        <button id="open-map" type="button" hidden>整图 M</button>
         <button id="restart" type="button" disabled>返回存档 R</button>
         <button id="new-game" type="button" disabled>新游戏（清进度）</button>
       </div>
@@ -116,6 +126,12 @@
     <p class="note" id="map-note">蓝色方块：能力　绿色方块：触碰存档　金色方块：隐藏收集物。R 返回存档 · F 全屏 · Esc 退出全屏</p>
     <p class="note" id="save-status">进度自动保存在当前浏览器。橙色范围是攻击前摇，红色范围会造成伤害。存档点可回血。</p>
   </main>
+  <dialog id="world-map" aria-labelledby="world-map-title" aria-describedby="map-location">
+    <header><h2 id="world-map-title">完整地图</h2><button id="close-map" type="button">返回游戏 · M / Esc</button></header>
+    <p id="map-location"></p>
+    <div id="map-graph" tabindex="0" aria-label="整图，可横向滚动"></div>
+    <div class="map-legend"><span>蓝色框：你在这里</span><span>灰实框：已到达</span><span>灰虚框：未到达</span><span>A/B：虚线未打通，实线已打通</span><span>紫色：11→09→12 回访</span></div>
+  </dialog>
   <script>
   "use strict";
 
@@ -150,6 +166,8 @@
   let lastFrame = 0;
   let manualTime = false;
   let paused = false;
+  let mapOpen = false;
+  let pausedBeforeMap = false;
   let roomId = "";
   let deaths = 0;
   let notice = "";
@@ -194,11 +212,15 @@
     const visited = value => value === undefined || (Array.isArray(value) && value.every(id => Object.hasOwn(data.rooms, id)));
     require(data.saveKey === undefined || (typeof data.saveKey === "string" && data.saveKey.length > 0), "saveKey");
     require(data.routeLocks === undefined || record(data.routeLocks), "routeLocks");
+    require(data.camera === undefined || (numbers(data.camera, ["lookAhead", "verticalDeadZone"])
+      && data.camera.lookAhead >= 0 && data.camera.verticalDeadZone >= 0), "camera");
     require(numbers(data.doorway, ["height", "belowFloor", "inset"])
       && data.doorway.height > 0 && data.doorway.belowFloor >= 0 && data.doorway.inset >= 0, "doorway");
     require(typeof data.abilityNotices?.dash === "string", "abilityNotices.dash");
     const itemIds = new Set();
     for (const [id, room] of Object.entries(data.rooms)) {
+      if (data.ui?.showMap) require(numbers(room.position, ["x", "y"])
+        && room.position.x >= 0 && room.position.y >= 0, `${id}.position`);
       require(numbers(room, ["width", "height"]) && room.width >= VIEW.width && room.height >= VIEW.height
         && typeof room.name === "string" && typeof room.hint === "string", `rooms.${id}`);
       require(Array.isArray(room.platforms) && room.platforms.every(rect), `${id}.platforms`);
@@ -272,6 +294,8 @@
     document.getElementById("new-game").disabled = false;
     document.getElementById("collection-status").hidden = COLLECTIBLE_IDS.length === 0;
     const ui = data.ui || {};
+    document.getElementById("open-map").hidden = !ui.showMap;
+    if (ui.showMap) document.querySelector("main > header").classList.add("with-map");
     for (const [key, id] of Object.entries({ title: "game-title", controls: "controls", note: "map-note", saveNotice: "save-status" })) {
       if (ui[key]) document.getElementById(id).textContent = ui[key];
     }
@@ -353,13 +377,16 @@
   const horizontalInput = () => Number(keys.has("ArrowRight") || keys.has("KeyD"))
     - Number(keys.has("ArrowLeft") || keys.has("KeyA"));
 
-  function cameraTarget() {
+  function cameraTarget(snap = false) {
     const room = currentRoom();
+    const lookAhead = MAP.camera?.lookAhead ?? CONFIG.cameraLookAhead;
+    const desiredY = clamp(player.y + BODY.height / 2 - VIEW.height * 0.6, 0, room.height - VIEW.height);
+    // 整图在普通跳跃时保留纵向缓冲，落地后再平滑跟随台面高度。
+    const margin = !snap && !player.grounded ? MAP.camera?.verticalDeadZone || 0 : 0;
     return {
-      x: clamp(player.x + BODY.width / 2 + player.facing * CONFIG.cameraLookAhead
+      x: clamp(player.x + BODY.width / 2 + player.facing * lookAhead
         - VIEW.width / 2, 0, room.width - VIEW.width),
-      y: clamp(player.y + BODY.height / 2 - VIEW.height * 0.6,
-        0, room.height - VIEW.height),
+      y: margin > 0 ? clamp(camera.y, desiredY - margin, desiredY + margin) : desiredY,
     };
   }
 
@@ -383,7 +410,7 @@
     resetCombat();
     animationTime = 0;
     accumulator = 0;
-    Object.assign(camera, cameraTarget());
+    Object.assign(camera, cameraTarget(true));
     draw();
   }
 
@@ -434,7 +461,7 @@
       progress.checkpoint = currentRoom().checkpoint;
       checkpointTouch = progress.checkpoint;
     }
-    Object.assign(camera, cameraTarget());
+    Object.assign(camera, cameraTarget(true));
     saveProgress();
     notify(roomHint());
   }
@@ -1050,8 +1077,130 @@
     document.getElementById("collection-status").textContent = `收集 ${progress.collected.size} / ${COLLECTIBLE_IDS.length}`;
   }
 
+  function mapElement(parent, tag, attrs = {}, text = "") {
+    const element = document.createElementNS("http://www.w3.org/2000/svg", tag);
+    for (const [key, value] of Object.entries(attrs)) element.setAttribute(key, value);
+    if (text) element.textContent = text;
+    parent.append(element);
+    return element;
+  }
+
+  function mapConnectionPoints(from, to, portal) {
+    const a = { x: from.position.x * 250 + 40, y: from.position.y * 180 + 40 };
+    const b = { x: to.position.x * 250 + 40, y: to.position.y * 180 + 40 };
+    if (a.x !== b.x && a.y !== b.y) {
+      if (portal.kind === "return") {
+        const midY = (a.y + 110 + b.y) / 2;
+        return [[a.x + 45, a.y + 110], [a.x + 45, midY], [b.x + 145, midY], [b.x + 145, b.y]];
+      }
+      const left = b.x < a.x;
+      const start = [a.x + (left ? 0 : 190), a.y + 28];
+      const end = [b.x + (left ? 190 : 0), b.y + 82];
+      const midX = (start[0] + end[0]) / 2;
+      return [start, [midX, start[1]], [midX, end[1]], end];
+    }
+    if (a.x === b.x) return b.y < a.y
+      ? [[a.x + 95, a.y], [b.x + 95, b.y + 110]]
+      : [[a.x + 95, a.y + 110], [b.x + 95, b.y]];
+    return b.x < a.x
+      ? [[a.x, a.y + 55], [b.x + 190, b.y + 55]]
+      : [[a.x + 190, a.y + 55], [b.x, b.y + 55]];
+  }
+
+  function drawMapConnection(svg, from, portal) {
+    const points = mapConnectionPoints(from, ROOMS[portal.to], portal);
+    const shortcut = portal.kind === "shortcut";
+    const open = shortcut ? progress.openedRoutes.has(portal.opensRoute) : conditionsMet(portal);
+    const color = portal.kind === "return" ? open ? "#c5a4de" : "#776584"
+      : shortcut ? open ? "#8ed0ff" : "#66717f" : "#8594a6";
+    mapElement(svg, "polyline", { points: points.map(p => p.join(",")).join(" "), fill: "none",
+      stroke: color, "stroke-width": 2, "stroke-dasharray": open ? "none" : "6 5",
+      "marker-end": `url(#map-arrow-${portal.kind === "return" ? "return" : shortcut ? "shortcut" : "main"})`,
+      "data-kind": portal.kind, "data-to": portal.to, "data-open": open });
+    if (shortcut) {
+      const middle = points.length === 4
+        ? [points[1][0], (points[1][1] + points[2][1]) / 2]
+        : [(points[0][0] + points[1][0]) / 2, (points[0][1] + points[1][1]) / 2];
+      mapElement(svg, "rect", { x: middle[0] - 40, y: middle[1] - 13, width: 80, height: 26, fill: "#202630" });
+      mapElement(svg, "text", { x: middle[0], y: middle[1] + 5, fill: color, "font-size": 15, "text-anchor": "middle",
+        "data-shortcut": portal.opensRoute }, `${portal.opensRoute} ${open ? "已打通" : "未打通"}`);
+    }
+  }
+
+  function drawMapRoom(svg, id, room) {
+    const here = id === roomId, visited = progress.visited.has(id);
+    const x = room.position.x * 250 + 40, y = room.position.y * 180 + 40;
+    const group = mapElement(svg, "g", { "data-room": id, "data-current": here, "aria-label": `${room.name}${here ? "，你在这里" : visited ? "，已到达" : "，未到达"}` });
+    mapElement(group, "title", {}, `${room.name} · ${here ? "你在这里" : visited ? "已到达" : "未到达"}`);
+    mapElement(group, "rect", { x, y, width: 190, height: 110, rx: 7,
+      fill: here ? "#243f53" : visited ? "#303946" : "#242b35", stroke: here ? "#62baff" : visited ? "#b1bdcc" : "#5f6b7b",
+      "stroke-width": here ? 3 : 1.5, "stroke-dasharray": visited ? "none" : "5 4" });
+    const [chapter, name = room.name] = room.name.split(" · ");
+    const [organ, ...rest] = name.split("·");
+    const textAttrs = { x: x + 95, "text-anchor": "middle", fill: here ? "#b9e4ff" : visited ? "#e7e9ed" : "#a2abb9", "font-size": 17 };
+    mapElement(group, "text", { ...textAttrs, y: y + 29 }, `${chapter} · ${organ}`);
+    mapElement(group, "text", { ...textAttrs, y: y + 55 }, rest.join("·"));
+    mapElement(group, "text", { ...textAttrs, y: y + 85, "font-size": 14, "font-weight": here ? 600 : 400 }, here ? "你在这里" : visited ? "已到达" : "未到达");
+  }
+
+  function renderWorldMap() {
+    const rooms = Object.values(ROOMS);
+    const width = Math.max(...rooms.map(r => r.position.x)) * 250 + 270;
+    const height = Math.max(...rooms.map(r => r.position.y)) * 180 + 190;
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
+    svg.setAttribute("role", "img");
+    svg.setAttribute("aria-label", `完整地图，当前位于${currentRoom().name}，已到达${progress.visited.size}个房间`);
+    const defs = mapElement(svg, "defs");
+    for (const [name, color] of [["main", "#8594a6"], ["return", "#c5a4de"], ["shortcut", "#8ed0ff"]]) {
+      const marker = mapElement(defs, "marker", { id: `map-arrow-${name}`, viewBox: "0 0 8 8", refX: 7, refY: 4, markerWidth: 7, markerHeight: 7, orient: "auto" });
+      mapElement(marker, "path", { d: "M 1 1 L 7 4 L 1 7", fill: "none", stroke: color, "stroke-width": 1.4 });
+    }
+    for (const room of rooms) for (const portal of room.portals || []) {
+      if (["advance", "return"].includes(portal.kind) || portal.opensRoute) drawMapConnection(svg, room, portal);
+    }
+    for (const [id, room] of Object.entries(ROOMS)) drawMapRoom(svg, id, room);
+    document.getElementById("map-graph").replaceChildren(svg);
+    document.getElementById("map-location").textContent = `你在这里：${currentRoom().name}　已到达 ${progress.visited.size} / ${rooms.length}`;
+  }
+
+  function openWorldMap() {
+    if (!mapReady || !MAP.ui?.showMap || mapOpen) return;
+    pausedBeforeMap = paused;
+    pause();
+    mapOpen = true;
+    renderWorldMap();
+    document.getElementById("world-map").showModal();
+    const graph = document.getElementById("map-graph");
+    graph.focus();
+    const current = graph.querySelector('[data-current="true"]').getBoundingClientRect();
+    const viewport = graph.getBoundingClientRect();
+    graph.scrollLeft += current.left + current.width / 2 - viewport.left - graph.clientWidth / 2;
+  }
+
+  function closeWorldMap() {
+    if (!mapOpen) return;
+    mapOpen = false;
+    document.getElementById("world-map").close();
+    paused = pausedBeforeMap;
+    canvas.focus();
+    draw();
+  }
+
+  document.getElementById("open-map").addEventListener("click", openWorldMap);
+  document.getElementById("close-map").addEventListener("click", closeWorldMap);
+  document.getElementById("world-map").addEventListener("cancel", event => { event.preventDefault(); closeWorldMap(); });
+
   const gameKeys = new Set(["ArrowLeft", "ArrowRight", "ArrowUp", "KeyA", "KeyD", "Space", "ShiftLeft", "ShiftRight", "KeyJ", "KeyR", "KeyF"]);
   window.addEventListener("keydown", event => {
+    if (event.ctrlKey || event.metaKey || event.altKey) return;
+    if (mapOpen || (event.code === "KeyM" && mapReady && MAP.ui?.showMap)) {
+      if (!event.repeat && (event.code === "KeyM" || event.code === "Escape")) {
+        event.preventDefault();
+        if (mapOpen) closeWorldMap(); else openWorldMap();
+      }
+      return;
+    }
     if (!mapReady || !gameKeys.has(event.code) || event.ctrlKey || event.metaKey || event.altKey) return;
     if (event.code === "ArrowUp" && !currentRoom().portals?.length) return;
     event.preventDefault();
@@ -1133,6 +1282,7 @@
       room: { id: roomId, name: currentRoom().name, width: currentRoom().width,
         height: currentRoom().height, doors: currentRoom().doors },
       mapId: MAP.id,
+      mapOpen,
       portals: (currentRoom().portals || []).map(portal => ({ ...portal, open: conditionsMet(portal) })),
       markers: currentRoom().markers || [],
       openedRoutes: [...progress.openedRoutes],
