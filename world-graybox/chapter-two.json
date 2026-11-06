@@ -1,0 +1,394 @@
+{
+  "schemaVersion": 1,
+  "id": "whalefall-chapter-two",
+  "name": "鲸落万物生 · 第二章灰盒",
+  "saveKey": "whalefall-chapter-two-graybox-v1",
+  "startCheckpoint": "n02",
+  "camera": {
+    "lookAhead": 0,
+    "verticalDeadZone": 110
+  },
+  "doorway": {
+    "height": 100,
+    "belowFloor": 8,
+    "inset": 12
+  },
+  "storyFlags": [
+    "n02-refused",
+    "n02-cleared",
+    "n02-cry",
+    "n02-rescued",
+    "n02-permission",
+    "n02-complete"
+  ],
+  "abilityNotices": {
+    "dash": "本章只需普通跳与近战，冲刺尚未解锁。"
+  },
+  "source": {
+    "world": "world.md v0.1",
+    "story": "story.md v0.2 · 第二章",
+    "note": "章节事件沿用待审提案，地形、交互和战斗参数供灰盒试玩调整。"
+  },
+  "ui": {
+    "title": "第二章 · 守住路的人",
+    "platformColor": "#aab3be",
+    "controls": "← → / A D 移动　空格 跳跃　J 近战　↑ 交流 / 查看 / 行动　R 返回存档　F 全屏",
+    "note": "沿折井下行；在下层挡口前按 ↑ 向负壳守卫说明来意。",
+    "saveNotice": "触碰绿色方块存档回血。R/死亡/刷新保留章节行动，未完成的遭遇重置；各试玩存档独立。",
+    "canvasLabel": "第二章灰盒，左右移动，空格跳跃，J近战，上方向键互动，R返回存档，F全屏。"
+  },
+  "rooms": {
+    "n02": {
+      "name": "02 · 食道·折井",
+      "chapter": 2,
+      "chapterLabel": "第二章",
+      "width": 2800,
+      "height": 1160,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "hint": "沿折井下行；在下层挡口前按 ↑ 向负壳守卫说明来意。",
+      "hints": [
+        {
+          "requiresFlags": [
+            "n02-complete"
+          ],
+          "text": "第二章完成 · 可以回访折井，或点新游戏重新试玩。"
+        },
+        {
+          "requiresFlags": [
+            "n02-permission"
+          ],
+          "text": "前往右侧胃室入口，按 ↑ 继续。"
+        },
+        {
+          "requiresFlags": [
+            "n02-rescued"
+          ],
+          "text": "居民已到安全台。到右下方与老守护者交流。"
+        },
+        {
+          "requiresFlags": [
+            "n02-cry"
+          ],
+          "text": "老守护者正顶住支架。靠近下层按 ↑ 见证救援。"
+        },
+        {
+          "requiresFlags": [
+            "n02-cleared"
+          ],
+          "text": "负壳守卫已停战。向右下行，到住巢边查看求助。"
+        },
+        {
+          "requiresFlags": [
+            "n02-refused"
+          ],
+          "text": "正面重壳会挡刀；跳过守卫绕侧，或等钳击/压壳收招再反击。"
+        }
+      ],
+      "doors": {},
+      "entrances": {},
+      "portals": [],
+      "platforms": [
+        {
+          "x": 0,
+          "y": 300,
+          "w": 160,
+          "h": 860
+        },
+        {
+          "x": 160,
+          "y": 380,
+          "w": 160,
+          "h": 780
+        },
+        {
+          "x": 320,
+          "y": 460,
+          "w": 160,
+          "h": 700
+        },
+        {
+          "x": 480,
+          "y": 540,
+          "w": 160,
+          "h": 620
+        },
+        {
+          "x": 640,
+          "y": 620,
+          "w": 160,
+          "h": 540
+        },
+        {
+          "x": 800,
+          "y": 700,
+          "w": 1100,
+          "h": 460
+        },
+        {
+          "x": 1900,
+          "y": 780,
+          "w": 160,
+          "h": 380
+        },
+        {
+          "x": 2060,
+          "y": 860,
+          "w": 160,
+          "h": 300
+        },
+        {
+          "x": 2220,
+          "y": 940,
+          "w": 160,
+          "h": 220
+        },
+        {
+          "x": 2380,
+          "y": 1000,
+          "w": 420,
+          "h": 160
+        }
+      ],
+      "signs": [
+        {
+          "x": 35,
+          "y": 170,
+          "text": "折井 · 下层挡口 →"
+        },
+        {
+          "x": 865,
+          "y": 570,
+          "text": "说明来意 ↑ / 跳过重壳，绕侧反击"
+        },
+        {
+          "x": 1950,
+          "y": 660,
+          "text": "下层住巢 · 求助来自右下方"
+        },
+        {
+          "x": 2510,
+          "y": 870,
+          "text": "胃室方向 →"
+        }
+      ],
+      "items": [],
+      "enemies": [
+        {
+          "kind": "shell-guard",
+          "name": "负壳守卫",
+          "x": 1460,
+          "floor": 700,
+          "min": 1140,
+          "max": 1760,
+          "triggerX": 1180,
+          "homeX": 1650
+        }
+      ],
+      "markers": [],
+      "source": {
+        "chapterScript": "story.md v0.2 · 第二章/N02-01",
+        "grayboxNote": "反击空隙、救援分镜与几何为本轮灰盒提案。"
+      },
+      "encounter": {
+        "id": "N02-01",
+        "requiresFlags": [
+          "n02-refused"
+        ],
+        "flag": "n02-cleared",
+        "notice": "扣带松脱，重壳滑落 · 负壳守卫存活并停止阻拦。继续向下查看求助。"
+      },
+      "barriers": [
+        {
+          "x": 1830,
+          "y": 550,
+          "w": 28,
+          "h": 150,
+          "unlessFlags": [
+            "n02-cleared"
+          ],
+          "label": "封路重壳"
+        }
+      ],
+      "interactions": [
+        {
+          "id": "n02-request",
+          "x": 1060,
+          "y": 640,
+          "w": 80,
+          "h": 60,
+          "kind": "observation",
+          "label": "↑ 说明来意",
+          "setsFlag": "n02-refused",
+          "unlessFlags": [
+            "n02-cleared"
+          ],
+          "message": "负壳守卫拒绝通行，指向封闭刻痕。你试着侧身通过，重壳砸下，封住挡口。",
+          "repeatMessage": "歌声来自挡口后方。绕过重壳，寻找扣带和转身的空隙。"
+        },
+        {
+          "id": "n02-cry",
+          "x": 2100,
+          "y": 800,
+          "w": 70,
+          "h": 60,
+          "kind": "observation",
+          "label": "↑ 查看下层求助",
+          "setsFlag": "n02-cry",
+          "requiresFlags": [
+            "n02-cleared"
+          ],
+          "unlessFlags": [
+            "n02-cry"
+          ],
+          "message": "承路旧膜裂开，住巢滑落。老守护者越过居民，将长柄武器横进支架，用肩背顶住梁。"
+        },
+        {
+          "id": "n02-rescue",
+          "x": 2280,
+          "y": 880,
+          "w": 70,
+          "h": 60,
+          "kind": "observation",
+          "label": "↑ 见证救援",
+          "setsFlag": "n02-rescued",
+          "requiresFlags": [
+            "n02-cry"
+          ],
+          "unlessFlags": [
+            "n02-rescued"
+          ],
+          "message": "老守护者撑住弯梁，居民逐一爬上安全台。他确认下方无人，再把支架压回原位。"
+        },
+        {
+          "id": "n02-guardian",
+          "x": 2450,
+          "y": 940,
+          "w": 70,
+          "h": 60,
+          "kind": "resident",
+          "label": "老守护者 · ↑ 交流",
+          "setsFlag": "n02-permission",
+          "requiresFlags": [
+            "n02-rescued"
+          ],
+          "message": "老守护者先检查住巢，才听你解释鲸歌。他说明胃室供养不稳，允许前行；负壳守卫留下修补挡口。"
+        },
+        {
+          "id": "n02-end",
+          "x": 2640,
+          "y": 920,
+          "w": 100,
+          "h": 80,
+          "kind": "exit",
+          "label": "↑ 前往胃室",
+          "setsFlag": "n02-complete",
+          "requiresFlags": [
+            "n02-permission"
+          ],
+          "lockedMessage": "先解除挡口封锁，查看下层救援，并与老守护者交流。",
+          "message": "第二章完成 · 负壳守卫存活、居民获救，拾潮者获准前往胃室。可以原路回访。"
+        }
+      ],
+      "scenes": [
+        {
+          "x": 2230,
+          "y": 805,
+          "w": 70,
+          "h": 40,
+          "color": "#b6a48e",
+          "label": "住巢",
+          "unlessFlags": [
+            "n02-cry"
+          ]
+        },
+        {
+          "x": 2280,
+          "y": 865,
+          "w": 80,
+          "h": 45,
+          "color": "#b6a48e",
+          "label": "",
+          "requiresFlags": [
+            "n02-cry"
+          ],
+          "unlessFlags": [
+            "n02-rescued"
+          ]
+        },
+        {
+          "x": 2310,
+          "y": 820,
+          "w": 12,
+          "h": 110,
+          "color": "#d6c3a2",
+          "label": "撑住支架 · 住巢滑落",
+          "requiresFlags": [
+            "n02-cry"
+          ],
+          "unlessFlags": [
+            "n02-rescued"
+          ]
+        },
+        {
+          "x": 2330,
+          "y": 875,
+          "w": 34,
+          "h": 65,
+          "color": "#a6b6bf",
+          "label": "",
+          "requiresFlags": [
+            "n02-cry"
+          ],
+          "unlessFlags": [
+            "n02-rescued"
+          ]
+        },
+        {
+          "x": 2120,
+          "y": 815,
+          "w": 75,
+          "h": 36,
+          "color": "#b9d8ae",
+          "label": "居民已到安全台",
+          "requiresFlags": [
+            "n02-rescued"
+          ]
+        },
+        {
+          "x": 2260,
+          "y": 840,
+          "w": 100,
+          "h": 12,
+          "color": "#d6c3a2",
+          "label": "支架已稳固",
+          "requiresFlags": [
+            "n02-rescued"
+          ]
+        }
+      ]
+    }
+  },
+  "checkpoints": {
+    "n02": {
+      "room": "n02",
+      "x": 80,
+      "floor": 300,
+      "name": "折井 · 上层入口"
+    },
+    "n02-gate": {
+      "room": "n02",
+      "x": 1030,
+      "floor": 700,
+      "name": "折井 · 挡口前"
+    },
+    "n02-lower": {
+      "room": "n02",
+      "x": 1980,
+      "floor": 780,
+      "name": "折井 · 下层住巢前"
+    }
+  }
+}
