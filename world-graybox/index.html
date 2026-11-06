@@ -53,6 +53,14 @@
     enemyKnockbackY: 130,      // 普通敌人被击退时向上的速度
     enemyStun: 0.24,           // 普通敌人受击后暂停巡逻的时间
 
+    // 第一章食腐甲：只影响 kind=scavenger 的短遭遇，橙色蓄力后直线近扑。
+    scavengerWindup: 0.55,     // 近扑前摇，朝向在前摇开始时锁定
+    scavengerLunge: 0.28,      // 近扑持续时间
+    scavengerSpeed: 290,       // 近扑速度，像素/秒
+    scavengerRecovery: 0.85,   // 扑空后的反击窗口
+    scavengerReach: 210,       // 同层目标进入此距离时开始蓄力
+    scavengerRetreatSpeed: 140, // 被逼退后返回聚食处的速度，不再伤人
+
     // Boss：三招依次循环，橙色是前摇，红色是生效中的攻击。
     bossHealth: 16,            // Boss 血量
     bossSweepWindup: 0.65,     // 近身横扫的前摇时间
@@ -154,6 +162,7 @@
     abilities: { doubleJump: false, dash: false },
     checkpoint: "", collected: new Set(), visited: new Set(), bossDefeated: false,
     openedRoutes: new Set(),
+    flags: new Set(),
   };
 
   const keys = new Set();
@@ -193,6 +202,8 @@
     return (condition.requiredAbilities || []).every(id => progress.abilities[id])
       && (condition.requiresVisited || []).every(id => progress.visited.has(id))
       && (condition.requiresRoutes || []).every(id => progress.openedRoutes.has(id))
+      && (condition.requiresFlags || []).every(id => progress.flags.has(id))
+      && (condition.unlessFlags || []).every(id => !progress.flags.has(id))
       && (condition.bossDefeated === undefined || condition.bossDefeated === progress.bossDefeated);
   }
 
@@ -212,6 +223,11 @@
     const visited = value => value === undefined || (Array.isArray(value) && value.every(id => Object.hasOwn(data.rooms, id)));
     require(data.saveKey === undefined || (typeof data.saveKey === "string" && data.saveKey.length > 0), "saveKey");
     require(data.routeLocks === undefined || record(data.routeLocks), "routeLocks");
+    require(data.storyFlags === undefined || (Array.isArray(data.storyFlags)
+      && data.storyFlags.every(id => typeof id === "string")), "storyFlags");
+    const flags = value => value === undefined || (Array.isArray(value)
+      && value.every(id => data.storyFlags?.includes(id)));
+    const flagConditions = value => flags(value.requiresFlags) && flags(value.unlessFlags);
     require(data.camera === undefined || (numbers(data.camera, ["lookAhead", "verticalDeadZone"])
       && data.camera.lookAhead >= 0 && data.camera.verticalDeadZone >= 0), "camera");
     require(numbers(data.doorway, ["height", "belowFloor", "inset"])
@@ -239,6 +255,18 @@
       }
       require(Array.isArray(room.enemies) && room.enemies.every(enemy => numbers(enemy, ["x", "floor", "min", "max"])
         && enemy.min <= enemy.x && enemy.x <= enemy.max), `${id}.enemies`);
+      require(!room.enemies.some(enemy => enemy.kind === "scavenger") || record(room.encounter), `${id}.encounter`);
+      require(room.hints.every(flagConditions), `${id}.hints.flags`);
+      require(room.interactions === undefined || (Array.isArray(room.interactions) && room.interactions.every(item => rect(item)
+        && typeof item.id === "string" && typeof item.label === "string" && typeof item.message === "string"
+        && ["resident", "observation", "exit"].includes(item.kind) && data.storyFlags?.includes(item.setsFlag)
+        && flagConditions(item))), `${id}.interactions`);
+      if (room.encounter) {
+        require(typeof room.encounter.id === "string" && data.storyFlags?.includes(room.encounter.flag)
+          && flagConditions(room.encounter) && room.enemies.length > 0
+          && room.enemies.every(enemy => enemy.kind === "scavenger"
+            && numbers(enemy, ["triggerX", "homeX"]) && enemy.homeX >= enemy.min && enemy.homeX <= enemy.max), `${id}.encounter`);
+      }
       if (room.boss) require(rect(room.boss.spawn) && numbers(room.boss.arena, ["left", "right", "floor"])
         && room.boss.arena.left < room.boss.arena.right, `${id}.boss`);
       require(record(room.doors), `${id}.doors`);
@@ -255,7 +283,7 @@
       for (const portal of room.portals || []) {
         require(rect(portal) && typeof portal.id === "string" && !portalIds.has(portal.id)
           && typeof portal.label === "string" && abilities(portal.requiredAbilities) && visited(portal.requiresVisited)
-          && Object.hasOwn(data.rooms, portal.to), `${id}.portals`);
+          && Object.hasOwn(data.rooms, portal.to) && flagConditions(portal), `${id}.portals`);
         require(numbers(data.rooms[portal.to].entrances?.[portal.arrival], ["x", "floor"]), `${id}.portals.${portal.id}.arrival`);
         require(portal.requiresRoutes === undefined || (Array.isArray(portal.requiresRoutes)
           && portal.requiresRoutes.every(key => Object.hasOwn(data.routeLocks || {}, key))), `${id}.portals.${portal.id}.requiresRoutes`);
@@ -351,6 +379,7 @@
         collected: [...progress.collected], visited: [...progress.visited],
         bossDefeated: progress.bossDefeated,
         ...(MAP.routeLocks ? { openedRoutes: [...progress.openedRoutes] } : {}),
+        ...(MAP.storyFlags ? { flags: [...progress.flags] } : {}),
       }));
     } catch { storageUnavailable(); }
   }
@@ -368,6 +397,7 @@
       if (Array.isArray(data.visited)) progress.visited = new Set(data.visited.filter(id => Object.hasOwn(ROOMS, id)));
       if (Array.isArray(data.openedRoutes)) progress.openedRoutes = new Set(data.openedRoutes
         .filter(id => Object.hasOwn(MAP.routeLocks || {}, id)));
+      if (Array.isArray(data.flags)) progress.flags = new Set(data.flags.filter(id => MAP.storyFlags?.includes(id)));
     } catch { storageUnavailable(); }
   }
 
@@ -421,6 +451,7 @@
     progress.bossDefeated = false;
     progress.collected.clear();
     progress.openedRoutes.clear();
+    progress.flags.clear();
     progress.visited = new Set([CHECKPOINTS[MAP.startCheckpoint].room]);
     deaths = 0;
     paused = false;
@@ -481,6 +512,19 @@
     dashRequested = false;
     finishRoomChange();
     if (newlyOpened) notify(`${portal.routeLabel}已打通 · 两端现在可以往返`);
+  }
+
+  function enterInteraction() {
+    const item = (currentRoom().interactions || []).find(item => overlaps({ ...item, x: item.x - 24, w: item.w + 48 })
+      && (item.unlessFlags || []).every(id => !progress.flags.has(id)));
+    if (!item) return false;
+    if (!conditionsMet(item)) { notify(item.lockedMessage || "先完成当前目标"); return true; }
+    const done = progress.flags.has(item.setsFlag);
+    if (done && item.kind === "exit") return false;
+    progress.flags.add(item.setsFlag);
+    saveProgress();
+    notify(done ? item.repeatMessage || item.message : item.message);
+    return true;
   }
 
   function updateObjects() {
@@ -575,7 +619,9 @@
     enemiesByRoom = Object.fromEntries(Object.entries(ROOMS).map(([id, room]) => [id,
       room.enemies.map((spawn, index) => ({ ...spawn, id: `${id}-${index}`, y: spawn.floor - 28,
         w: 24, h: 28, hp: CONFIG.enemyHealth, dir: -1, vx: 0, vy: 0,
-        flash: 0, stun: 0, lastSwing: -1 })),
+        flash: 0, stun: 0, lastSwing: -1,
+        ...(spawn.kind === "scavenger" ? { hp: progress.flags.has(room.encounter.flag) ? 0 : CONFIG.enemyHealth,
+          state: progress.flags.has(room.encounter.flag) ? "withdrawn" : "dormant", timer: 0 } : {}) })),
     ]));
     boss = createBoss();
     waves = [];
@@ -640,6 +686,7 @@
 
   function updateEnemies(dt) {
     for (const enemy of enemiesByRoom[roomId]) {
+      if (enemy.kind === "scavenger" && updateScavenger(enemy, dt)) continue;
       if (enemy.hp <= 0) continue;
       enemy.flash = Math.max(0, enemy.flash - dt);
       enemy.stun = Math.max(0, enemy.stun - dt);
@@ -654,6 +701,58 @@
       enemy.y = Math.min(enemy.floor - enemy.h, enemy.y + enemy.vy * dt);
       if (enemy.y === enemy.floor - enemy.h) enemy.vy = 0;
     }
+  }
+
+  // 返回 true 表示已由食腐甲状态机完成更新；原巡逻敌人继续走原逻辑。
+  function updateScavenger(enemy, dt) {
+    if (enemy.hp <= 0 || enemy.state === "withdrawn") {
+      enemy.state = "withdrawn";
+      enemy.flash = Math.max(0, enemy.flash - dt);
+      enemy.vx = enemy.vy = enemy.stun = 0;
+      enemy.x = approach(enemy.x, enemy.homeX, CONFIG.scavengerRetreatSpeed * dt);
+      enemy.y = enemy.floor - enemy.h;
+      return true;
+    }
+    if (enemy.state === "dormant") {
+      if (!conditionsMet(currentRoom().encounter) || player.x < enemy.triggerX) return true;
+      enemy.state = "recovery";
+      enemy.timer = 0;
+      notify("食腐甲被惊动 · 橙色蓄力后近扑，跳开后趁收招按 J 反击");
+    }
+    if (enemy.stun > 0) { enemy.state = "recovery"; enemy.timer = CONFIG.scavengerRecovery; return false; }
+    enemy.flash = Math.max(0, enemy.flash - dt);
+    enemy.timer = Math.max(0, enemy.timer - dt);
+    if (enemy.state === "recovery" && enemy.timer === 0
+      && Math.abs(player.y + BODY.height - enemy.floor) < 80
+      && Math.abs(player.x - enemy.x) < CONFIG.scavengerReach) {
+      enemy.dir = player.x >= enemy.x ? 1 : -1;
+      enemy.state = "windup";
+      enemy.timer = CONFIG.scavengerWindup;
+    } else if (enemy.state === "windup" && enemy.timer === 0) {
+      enemy.state = "lunge";
+      enemy.timer = CONFIG.scavengerLunge;
+    } else if (enemy.state === "lunge" && enemy.timer === 0) {
+      enemy.state = "recovery";
+      enemy.timer = CONFIG.scavengerRecovery;
+    }
+    enemy.vx = enemy.state === "lunge" ? enemy.dir * CONFIG.scavengerSpeed : 0;
+    enemy.x = clamp(enemy.x + enemy.vx * dt, enemy.min, enemy.max);
+    enemy.y = Math.min(enemy.floor - enemy.h, enemy.y + enemy.vy * dt);
+    enemy.vy = enemy.y < enemy.floor - enemy.h ? enemy.vy + CONFIG.gravity * dt : 0;
+    return true;
+  }
+
+  function enemyIsHostile(enemy) {
+    return enemy.hp > 0 && !["dormant", "withdrawn"].includes(enemy.state);
+  }
+
+  function updateEncounter() {
+    const encounter = currentRoom().encounter;
+    if (!encounter || progress.flags.has(encounter.flag)
+      || !enemiesByRoom[roomId].every(enemy => enemy.state === "withdrawn")) return;
+    progress.flags.add(encounter.flag);
+    saveProgress();
+    notify(encounter.notice);
   }
 
   function bossSweepBox() {
@@ -704,13 +803,14 @@
     if (player.attackTime <= 0) return;
     const box = attackBox();
     for (const enemy of enemiesByRoom[roomId]) {
-      if (enemy.hp <= 0 || enemy.lastSwing === attackSerial || !touches(box, enemy)) continue;
+      if (!enemyIsHostile(enemy) || enemy.lastSwing === attackSerial || !touches(box, enemy)) continue;
       enemy.hp = Math.max(0, enemy.hp - CONFIG.attackDamage);
       enemy.lastSwing = attackSerial;
       enemy.flash = CONFIG.hitFlash;
       enemy.stun = CONFIG.enemyStun;
       enemy.vx = player.attackFacing * CONFIG.enemyKnockback;
       enemy.vy = -CONFIG.enemyKnockbackY;
+      if (enemy.hp <= 0 && enemy.kind === "scavenger") enemy.state = "withdrawn";
       hitFeedback();
     }
     if (!boss || boss.hp <= 0 || boss.lastSwing === attackSerial || !touches(box, boss)) return;
@@ -735,8 +835,9 @@
     waves = waves.filter(wave => wave.life > 0 && wave.x >= currentRoom().boss.arena.left && wave.x + wave.w <= currentRoom().boss.arena.right);
     resolvePlayerAttack();
     for (const enemy of enemiesByRoom[roomId]) {
-      if (enemy.hp > 0 && enemy.stun <= 0 && touches(playerBox(), enemy)) hurtPlayer(enemy.x + enemy.w / 2);
+      if (enemyIsHostile(enemy) && enemy.stun <= 0 && touches(playerBox(), enemy)) hurtPlayer(enemy.x + enemy.w / 2);
     }
+    updateEncounter();
     if (!boss || boss.hp <= 0 || !boss.active) return;
     if (touches(playerBox(), boss)) hurtPlayer(boss.x + boss.w / 2);
     if (boss.state === "active" && boss.move === "sweep" && touches(playerBox(), bossSweepBox())) {
@@ -803,7 +904,7 @@
     }
     if (player.x < 0 && doorIsOpen("left")) changeRoom("left");
     else if (player.x + BODY.width > currentRoom().width && doorIsOpen("right")) changeRoom("right");
-    if (portalRequested) { portalRequested = false; enterPortal(); }
+    if (portalRequested) { portalRequested = false; if (!enterInteraction()) enterPortal(); }
     updateObjects();
     updateCombat(dt);
     const target = cameraTarget();
@@ -918,9 +1019,23 @@
 
   function drawCombat() {
     for (const enemy of enemiesByRoom[roomId]) {
-      if (enemy.hp <= 0) continue;
-      ctx.fillStyle = enemy.flash > 0 ? "#ffffff" : "#c38792";
+      if (enemy.hp <= 0 && enemy.kind !== "scavenger") continue;
+      ctx.fillStyle = enemy.flash > 0 ? "#ffffff" : enemy.state === "withdrawn" ? "#68717c"
+        : enemy.state === "windup" ? "#edba7c" : enemy.state === "lunge" ? "#ed8383" : "#c38792";
       ctx.fillRect(Math.round(enemy.x), Math.round(enemy.y), enemy.w, enemy.h);
+      if (enemy.kind === "scavenger") {
+        ctx.strokeStyle = ctx.fillStyle;
+        ctx.strokeRect(enemy.x + 4, enemy.y - 5, enemy.w - 8, 5);
+        ctx.font = "12px system-ui";
+        ctx.textAlign = "center";
+        ctx.fillText(enemy.state === "withdrawn" ? "退回聚食处" : `食腐甲 ${enemy.hp}`, enemy.x + enemy.w / 2, enemy.y - 14);
+        if (enemy.state === "windup") {
+          ctx.setLineDash([5, 4]);
+          ctx.strokeRect(enemy.dir > 0 ? enemy.x + enemy.w : enemy.x - CONFIG.scavengerSpeed * CONFIG.scavengerLunge,
+            enemy.floor - enemy.h, CONFIG.scavengerSpeed * CONFIG.scavengerLunge, enemy.h);
+          ctx.setLineDash([]);
+        }
+      }
       ctx.fillStyle = "#242a34";
       ctx.fillRect(Math.round(enemy.x) + (enemy.dir > 0 ? 15 : 5), Math.round(enemy.y) + 7, 4, 4);
     }
@@ -976,7 +1091,7 @@
       ctx.fillText(text, sign.x, sign.y);
     }
     for (const [id, cp] of Object.entries(CHECKPOINTS)) {
-      if (MAP.ui?.automaticCheckpoints) continue;
+      if (MAP.ui?.automaticCheckpoints && !room.encounter) continue;
       if (id === MAP.startCheckpoint || cp.room !== roomId) continue;
       ctx.fillStyle = progress.checkpoint === id ? "#a8d6ae" : "#6a9672";
       ctx.fillRect(cp.x - 12, cp.floor - 44, 24, 44);
@@ -997,6 +1112,26 @@
       }
     }
     drawPortalsAndMarkers();
+    drawInteractions();
+  }
+
+  function drawInteractions() {
+    ctx.textAlign = "center";
+    for (const item of currentRoom().interactions || []) {
+      if (item.kind !== "exit" && !conditionsMet(item)) continue;
+      if (item.y - camera.y < 100) continue; // 避免高处观察点的框与章节目标重叠。
+      const done = progress.flags.has(item.setsFlag);
+      ctx.strokeStyle = ctx.fillStyle = item.kind === "resident" ? "#b9d8ae" : done ? "#a0b4c5" : "#e7ca86";
+      if (item.kind === "resident") {
+        ctx.fillRect(item.x + 18, item.y + item.h - 32, 22, 32);
+        ctx.fillRect(item.x + 3, item.y + item.h - 46, 9, 11);
+      } else {
+        ctx.strokeRect(item.x, item.y, item.w, item.h);
+      }
+      ctx.font = "13px system-ui";
+      ctx.fillText(done && item.kind === "exit" ? (currentRoom().portals?.length ? "第一章完成 · ↑ 继续" : "第一章完成 · 可回访") : item.label,
+        item.x + item.w / 2, item.y - 14);
+    }
   }
 
   function drawPortalsAndMarkers() {
@@ -1052,14 +1187,25 @@
     ctx.textAlign = "right";
     if (COLLECTIBLE_IDS.length) ctx.fillText(`收集 ${progress.collected.size} / ${COLLECTIBLE_IDS.length}`, VIEW.width - 16, 26);
     drawCombatHud();
+    if (currentRoom().encounter) {
+      ctx.textAlign = "left";
+      ctx.fillStyle = "#d5dfeb";
+      ctx.fillText(`目标：${roomHint()}`, 16, 78);
+    }
     if (noticeTime > 0) {
       ctx.font = "14px system-ui";
-      const width = Math.min(VIEW.width - 24, ctx.measureText(notice).width + 24);
+      const lines = [""];
+      for (const char of notice) {
+        if (ctx.measureText(lines[lines.length - 1] + char).width > VIEW.width - 64) lines.push("");
+        lines[lines.length - 1] += char;
+      }
+      const width = Math.min(VIEW.width - 24, Math.max(...lines.map(line => ctx.measureText(line).width)) + 24);
+      const height = 12 + lines.length * 20;
       ctx.fillStyle = "#171b22";
-      ctx.fillRect((VIEW.width - width) / 2, VIEW.height - 44, width, 32);
+      ctx.fillRect((VIEW.width - width) / 2, VIEW.height - height - 12, width, height);
       ctx.fillStyle = "#e7e9ed";
       ctx.textAlign = "center";
-      ctx.fillText(notice, VIEW.width / 2, VIEW.height - 23);
+      lines.forEach((line, i) => ctx.fillText(line, VIEW.width / 2, VIEW.height - height + 8 + i * 20));
     }
     if (paused) {
       ctx.fillStyle = "#242a34";
@@ -1202,7 +1348,7 @@
       return;
     }
     if (!mapReady || !gameKeys.has(event.code) || event.ctrlKey || event.metaKey || event.altKey) return;
-    if (event.code === "ArrowUp" && !currentRoom().portals?.length) return;
+    if (event.code === "ArrowUp" && !currentRoom().portals?.length && !currentRoom().interactions?.length) return;
     event.preventDefault();
     paused = false;
     if (event.repeat || keys.has(event.code)) return;
@@ -1286,13 +1432,19 @@
       portals: (currentRoom().portals || []).map(portal => ({ ...portal, open: conditionsMet(portal) })),
       markers: currentRoom().markers || [],
       openedRoutes: [...progress.openedRoutes],
+      ...(MAP.storyFlags ? { flags: [...progress.flags], objective: roomHint(),
+        interactions: (currentRoom().interactions || []).filter(item => conditionsMet(item) || item.kind === "exit")
+          .map(item => ({ ...item, done: progress.flags.has(item.setsFlag) })),
+        encounter: currentRoom().encounter ? { id: currentRoom().encounter.id,
+          cleared: progress.flags.has(currentRoom().encounter.flag) } : null,
+        withdrawnEnemies: enemiesByRoom[roomId].filter(enemy => enemy.state === "withdrawn") } : {}),
       abilities: { ...progress.abilities },
       checkpoint: { id: progress.checkpoint, ...CHECKPOINTS[progress.checkpoint] },
       collected: [...progress.collected], totalCollectibles: COLLECTIBLE_IDS.length,
       visited: [...progress.visited], deaths, notice: noticeTime > 0 ? notice : "",
       combat: { hitStop: hitStopTime, shakeTime, attackSerial,
         attackBox: player.attackTime > 0 ? attackBox() : null },
-      enemies: enemiesByRoom[roomId].filter(enemy => enemy.hp > 0).map(enemy => ({ ...enemy })),
+      enemies: enemiesByRoom[roomId].filter(enemy => enemy.hp > 0 && enemy.state !== "withdrawn").map(enemy => ({ ...enemy })),
       boss: boss ? { ...boss } : null,
       bossDefeated: progress.bossDefeated, waves: waves.map(wave => ({ ...wave })),
       visibleItems: currentRoom().items.filter(itemAvailable).filter(p => p.x + p.w >= camera.x

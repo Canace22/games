@@ -1,0 +1,322 @@
+{
+  "schemaVersion": 1,
+  "id": "whalefall-chapter-one",
+  "name": "鲸落万物生 · 第一章灰盒",
+  "saveKey": "whalefall-chapter-one-graybox-v1",
+  "startCheckpoint": "n01",
+  "camera": {
+    "lookAhead": 65,
+    "verticalDeadZone": 100
+  },
+  "doorway": {
+    "height": 100,
+    "belowFloor": 8,
+    "inset": 12
+  },
+  "abilityNotices": {
+    "dash": "第一章只需普通跳与近战；冲刺尚未解锁。"
+  },
+  "source": {
+    "world": "world.md v0.1",
+    "story": "story.md v0.2 · 第一章/N01-01",
+    "note": "章节叙事为待审提案；几何、敌人时序与交互文案为本次灰盒设计，不新增正式能力与人物设定。"
+  },
+  "ui": {
+    "title": "第一章 · 灯在鲸须间",
+    "platformColor": "#aab3be",
+    "controls": "← → / A D 移动　空格 跳跃　J 近战　↑ 问候 / 查看 / 出口　R 返回存档　F 全屏",
+    "note": "第一章灰盒：问候 → 循声进入侧道 → 分开逼退两只食腐甲 → 问路 → 折井入口。上层观察可选。",
+    "saveNotice": "绿色方块为存档点。R / 死亡 / 刷新保留章节进度，未完成遭遇会重置；存档与其他试玩独立。",
+    "canvasLabel": "第一章须庭灰盒，左右移动，空格跳跃，J近战，靠近人物或观察点按上方向键互动，R返回存档，F全屏。"
+  },
+  "rooms": {
+    "n01": {
+      "name": "01 · 鲸口·须庭",
+      "chapter": 1,
+      "width": 3360,
+      "height": 1000,
+      "hints": [
+        {
+          "requiresFlags": [
+            "n01-complete"
+          ],
+          "text": "第一章完成 · 须庭可以回访，或点新游戏从巡视缝重新试玩。"
+        },
+        {
+          "requiresFlags": [
+            "n01-guided"
+          ],
+          "text": "沿右上方台阶去折井；滤缝旁可停下查看回水。"
+        },
+        {
+          "requiresFlags": [
+            "n01-cleared"
+          ],
+          "text": "食腐甲退回聚食处。到右侧菌灯旁，按 ↑ 请补巢者指路。"
+        },
+        {
+          "requiresFlags": [
+            "n01-greeted"
+          ],
+          "text": "循右侧断续低鸣进入侧道；橙框是近扑前兆，跳过须板分开交锋。"
+        }
+      ],
+      "hint": "先到右侧菌灯旁，按 ↑ 向补巢者问候。",
+      "doors": {},
+      "entrances": {},
+      "portals": [],
+      "platforms": [
+        {
+          "x": 0,
+          "y": 820,
+          "w": 600,
+          "h": 180
+        },
+        {
+          "x": 600,
+          "y": 760,
+          "w": 160,
+          "h": 240
+        },
+        {
+          "x": 760,
+          "y": 700,
+          "w": 160,
+          "h": 300
+        },
+        {
+          "x": 920,
+          "y": 760,
+          "w": 200,
+          "h": 240
+        },
+        {
+          "x": 1120,
+          "y": 820,
+          "w": 1040,
+          "h": 180
+        },
+        {
+          "x": 2160,
+          "y": 760,
+          "w": 180,
+          "h": 240
+        },
+        {
+          "x": 2340,
+          "y": 700,
+          "w": 180,
+          "h": 300
+        },
+        {
+          "x": 2520,
+          "y": 640,
+          "w": 160,
+          "h": 360
+        },
+        {
+          "x": 2680,
+          "y": 580,
+          "w": 160,
+          "h": 420
+        },
+        {
+          "x": 2840,
+          "y": 540,
+          "w": 520,
+          "h": 460
+        },
+        {
+          "x": 1580,
+          "y": 742,
+          "w": 60,
+          "h": 78
+        },
+        {
+          "x": 1110,
+          "y": 680,
+          "w": 180,
+          "h": 20
+        },
+        {
+          "x": 1310,
+          "y": 620,
+          "w": 160,
+          "h": 20
+        },
+        {
+          "x": 1500,
+          "y": 560,
+          "w": 200,
+          "h": 20
+        },
+        {
+          "x": 1720,
+          "y": 620,
+          "w": 150,
+          "h": 20
+        },
+        {
+          "x": 1900,
+          "y": 680,
+          "w": 170,
+          "h": 20
+        }
+      ],
+      "items": [],
+      "signs": [
+        {
+          "x": 80,
+          "y": 700,
+          "text": "巡视缝 → 须庭　　空格：长按跳得更高"
+        },
+        {
+          "x": 940,
+          "y": 610,
+          "text": "上层可绕行观察 / 下层循声前进"
+        },
+        {
+          "x": 1130,
+          "y": 600,
+          "text": "断续低鸣 →"
+        },
+        {
+          "x": 1520,
+          "y": 715,
+          "text": "须板"
+        },
+        {
+          "x": 2850,
+          "y": 420,
+          "text": "折井方向 →"
+        }
+      ],
+      "enemies": [
+        {
+          "kind": "scavenger",
+          "x": 1450,
+          "floor": 820,
+          "min": 1280,
+          "max": 1520,
+          "triggerX": 1210,
+          "homeX": 1460
+        },
+        {
+          "kind": "scavenger",
+          "x": 1850,
+          "floor": 820,
+          "min": 1710,
+          "max": 2040,
+          "triggerX": 1650,
+          "homeX": 1880
+        }
+      ],
+      "markers": [],
+      "encounter": {
+        "id": "N01-01",
+        "requiresFlags": [
+          "n01-greeted"
+        ],
+        "flag": "n01-cleared",
+        "notice": "食腐甲已退回聚食处 · 前往右侧菌灯，询问折井方向。"
+      },
+      "interactions": [
+        {
+          "id": "n01-greeting",
+          "x": 420,
+          "y": 760,
+          "w": 56,
+          "h": 60,
+          "kind": "resident",
+          "label": "补巢者 · ↑ 问候",
+          "unlessFlags": [
+            "n01-cleared"
+          ],
+          "setsFlag": "n01-greeted",
+          "message": "补巢者回应问候：侧道还有食腐甲，请等巡视。深处又传来一小段低鸣。",
+          "repeatMessage": "补巢者仍在补巢。低鸣来自右侧窄道。"
+        },
+        {
+          "id": "n01-lookout",
+          "x": 1550,
+          "y": 500,
+          "w": 60,
+          "h": 60,
+          "kind": "observation",
+          "label": "↑ 观察住巢",
+          "setsFlag": "n01-lookout",
+          "message": "从须板上方望去，住巢挤在避流凹处。居民留在侧道之外。"
+        },
+        {
+          "id": "n01-guidance",
+          "x": 2390,
+          "y": 640,
+          "w": 56,
+          "h": 60,
+          "kind": "resident",
+          "label": "补巢者 · ↑ 问路",
+          "requiresFlags": [
+            "n01-cleared"
+          ],
+          "setsFlag": "n01-guided",
+          "message": "补巢者指出右上方通往折井的路。你问起低鸣，对方只再次回应了问候。",
+          "repeatMessage": "补巢者指向右上方：沿滤缝旁的台阶前往折井。"
+        },
+        {
+          "id": "n01-filter",
+          "x": 2730,
+          "y": 520,
+          "w": 60,
+          "h": 60,
+          "kind": "observation",
+          "label": "↑ 查看滤缝",
+          "setsFlag": "n01-filter",
+          "message": "一团浑水在滤缝内绕了几圈，又退回原位。低鸣仍从深处断续传来。"
+        },
+        {
+          "id": "n01-end",
+          "x": 3190,
+          "y": 460,
+          "w": 90,
+          "h": 80,
+          "kind": "exit",
+          "label": "↑ 抵达折井入口",
+          "requiresFlags": [
+            "n01-guided"
+          ],
+          "setsFlag": "n01-complete",
+          "lockedMessage": "先与起点补巢者问候，逼退侧道两只食腐甲，再到右侧菌灯旁问路。",
+          "message": "第一章完成 · 拾潮者得知折井方向。你可以原路回访，或点新游戏重新试玩。"
+        }
+      ]
+    }
+  },
+  "checkpoints": {
+    "n01": {
+      "room": "n01",
+      "x": 100,
+      "floor": 820,
+      "name": "须庭 · 巡视缝"
+    },
+    "n01-side": {
+      "room": "n01",
+      "x": 1040,
+      "floor": 760,
+      "name": "须庭 · 侧道前"
+    },
+    "n01-inner": {
+      "room": "n01",
+      "x": 2345,
+      "floor": 700,
+      "name": "须庭 · 内侧通路"
+    }
+  },
+  "storyFlags": [
+    "n01-greeted",
+    "n01-cleared",
+    "n01-guided",
+    "n01-lookout",
+    "n01-filter",
+    "n01-complete"
+  ]
+}
