@@ -47,11 +47,14 @@
     hurtKnockbackX: 350,       // 玩家受伤时的水平弹开速度
     hurtKnockbackY: 210,       // 玩家受伤时向上弹起的速度
     enemyHealth: 3,            // 普通敌人血量；默认需要命中 3 次
+    critterHealth: 2,          // R1 巡游小甲需要命中 2 次
     enemySpeed: 65,            // 普通敌人巡逻速度
     enemyKnockback: 250,       // 普通敌人被击退的水平速度
     enemyKnockbackFriction: 1200, // 击退后的减速；越小退得越远
     enemyKnockbackY: 130,      // 普通敌人被击退时向上的速度
     enemyStun: 0.24,           // 普通敌人受击后暂停巡逻的时间
+    actionEffectLifetime: 0.28, // 动作粒子淡出的时间
+    landingEffectSpeed: 150,   // 低于此下落速度的接地不产生粒子
 
     // 第一章食腐甲：只影响 kind=scavenger 的短遭遇，橙色蓄力后直线近扑。
     scavengerWindup: 0.55,     // 近扑前摇，朝向在前摇开始时锁定
@@ -202,6 +205,14 @@
   let hitStopTime = 0;
   let shakeTime = 0;
   let effectClock = 0;
+  const actionEffects = [];
+  const effectStyle = {
+    jump: { color: "#9bdbe8", count: 5, sweep: 1, travel: 23, streak: 4 },
+    land: { color: "#b9ced7", count: 7, sweep: 1, travel: 28, streak: 5 },
+    hit: { color: "#ffdb95", count: 8, sweep: 1.8, travel: 36, streak: 11 },
+    hurt: { color: "#f69ba8", count: 7, sweep: 1.8, travel: 33, streak: 9 },
+    defeat: { color: "#e9a6c5", count: 11, sweep: 1.8, travel: 46, streak: 11 },
+  };
   let attackSerial = 0;
   let enemiesByRoom = {};
   let boss;
@@ -239,6 +250,7 @@
     require(data?.schemaVersion === 1 && record(data.rooms) && Object.keys(data.rooms).length > 0, "rooms / schemaVersion");
     const visited = value => value === undefined || (Array.isArray(value) && value.every(id => Object.hasOwn(data.rooms, id)));
     require(data.saveKey === undefined || (typeof data.saveKey === "string" && data.saveKey.length > 0), "saveKey");
+    require(data.ui?.actionEffects === undefined || typeof data.ui.actionEffects === "boolean", "ui.actionEffects");
     require(data.routeLocks === undefined || record(data.routeLocks), "routeLocks");
     require(data.storyFlags === undefined || (Array.isArray(data.storyFlags)
       && data.storyFlags.every(id => typeof id === "string")), "storyFlags");
@@ -469,6 +481,7 @@
     attackRequested = false;
     portalRequested = false;
     checkpointTouch = progress.checkpoint;
+    actionEffects.length = 0;
     resetCombat();
     storyTimers = {};
     animationTime = 0;
@@ -514,6 +527,7 @@
 
   function finishRoomChange(checkpoint = currentRoom().checkpoint) {
     player.attackTime = 0;
+    actionEffects.length = 0;
     attackRequested = false;
     portalRequested = false;
     waves = [];
@@ -616,6 +630,7 @@
   }
 
   function moveVertical(dt) {
+    const wasGrounded = player.grounded, fallSpeed = player.vy;
     const distance = player.vy * dt;
     player.y += distance;
     player.grounded = false;
@@ -630,12 +645,16 @@
       }
       player.vy = 0;
     }
+    if (!wasGrounded && player.grounded && fallSpeed >= CONFIG.landingEffectSpeed) {
+      addActionEffect("land", player.x + BODY.width / 2, player.y + BODY.height - 2);
+    }
   }
 
   function tryJump() {
     if (jumpBuffer <= 0 || player.dashTime > 0 || player.hurtTime > 0) return;
     const groundJump = player.grounded || player.coyote > 0;
     if (!groundJump && (!progress.abilities.doubleJump || player.extraJumpUsed)) return;
+    addActionEffect("jump", player.x + BODY.width / 2, player.y + BODY.height - 2);
     player.extraJumpUsed = !groundJump;
     player.vy = -CONFIG.jumpSpeed * (groundJump ? 1 : CONFIG.doubleJumpMultiplier);
     player.grounded = false;
@@ -654,17 +673,22 @@
 
   function resetCombat() {
     enemiesByRoom = Object.fromEntries(Object.entries(ROOMS).map(([id, room]) => [id,
-      room.enemies.map((spawn, index) => ({ ...spawn, id: `${id}-${index}`, y: spawn.floor - 28,
-        w: 24, h: 28, hp: CONFIG.enemyHealth, dir: -1, vx: 0, vy: 0,
-        flash: 0, stun: 0, lastSwing: -1,
-        ...(spawn.kind === "scavenger" ? { hp: progress.flags.has(room.encounter.flag) ? 0 : CONFIG.enemyHealth,
-          state: progress.flags.has(room.encounter.flag) ? "withdrawn" : "dormant", timer: 0 } : {}),
-        ...(spawn.kind === "shell-guard" ? { w: 64, h: 54, y: spawn.floor - 54,
-          hp: progress.flags.has(room.encounter.flag) ? 0 : CONFIG.guardHealth,
-          state: progress.flags.has(room.encounter.flag) ? "withdrawn" : "dormant", timer: 0, cycle: 0, move: "claw" } : {}),
-        ...(spawn.kind === "sludge-crab" ? { w: 58, h: 44, y: spawn.floor - 44,
-          hp: progress.flags.has(room.encounter.flag) ? 0 : CONFIG.sludgeHealth,
-          state: progress.flags.has(room.encounter.flag) ? "withdrawn" : "dormant", timer: 0 } : {}) })),
+      room.enemies.map((spawn, index) => {
+        const critter = spawn.kind === "critter", height = critter ? 20 : 28;
+        return {
+          ...spawn, id: `${id}-${index}`, y: spawn.floor - height,
+          w: 24, h: height, hp: critter ? CONFIG.critterHealth : CONFIG.enemyHealth, dir: -1, vx: 0, vy: 0,
+          flash: 0, stun: 0, lastSwing: -1,
+          ...(spawn.kind === "scavenger" ? { hp: progress.flags.has(room.encounter.flag) ? 0 : CONFIG.enemyHealth,
+            state: progress.flags.has(room.encounter.flag) ? "withdrawn" : "dormant", timer: 0 } : {}),
+          ...(spawn.kind === "shell-guard" ? { w: 64, h: 54, y: spawn.floor - 54,
+            hp: progress.flags.has(room.encounter.flag) ? 0 : CONFIG.guardHealth,
+            state: progress.flags.has(room.encounter.flag) ? "withdrawn" : "dormant", timer: 0, cycle: 0, move: "claw" } : {}),
+          ...(spawn.kind === "sludge-crab" ? { w: 58, h: 44, y: spawn.floor - 44,
+            hp: progress.flags.has(room.encounter.flag) ? 0 : CONFIG.sludgeHealth,
+            state: progress.flags.has(room.encounter.flag) ? "withdrawn" : "dormant", timer: 0 } : {}),
+        };
+      }),
     ]));
     boss = createBoss();
     waves = [];
@@ -692,6 +716,10 @@
     shakeTime = CONFIG.shakeDuration;
   }
 
+  function addActionEffect(kind, x, y) {
+    if (MAP.ui?.actionEffects) actionEffects.push({ kind, x, y, started: effectClock });
+  }
+
   function die(reason) {
     deaths++;
     reset();
@@ -711,6 +739,7 @@
     player.dashTime = 0;
     player.attackTime = 0;
     attackRequested = false;
+    addActionEffect("hurt", player.x + BODY.width / 2, player.y + BODY.height / 2);
     hitFeedback();
   }
 
@@ -942,12 +971,14 @@
         enemy.vy = -CONFIG.enemyKnockbackY;
       }
       if (enemy.hp <= 0 && ["scavenger", "shell-guard", "sludge-crab"].includes(enemy.kind)) enemy.state = "withdrawn";
+      addActionEffect(enemy.hp > 0 ? "hit" : "defeat", enemy.x + enemy.w / 2, enemy.y + enemy.h / 2);
       hitFeedback();
     }
     if (!boss || boss.hp <= 0 || boss.lastSwing === attackSerial || !touches(box, boss)) return;
     boss.hp = Math.max(0, boss.hp - CONFIG.attackDamage);
     boss.lastSwing = attackSerial;
     boss.flash = CONFIG.hitFlash;
+    addActionEffect(boss.hp > 0 ? "hit" : "defeat", boss.x + boss.w / 2, boss.y + boss.h / 2);
     hitFeedback();
     if (boss.hp <= 0) {
       boss.active = false;
@@ -981,6 +1012,7 @@
 
   function update(dt) {
     effectClock += dt;
+    while (actionEffects.length && effectClock - actionEffects[0].started >= CONFIG.actionEffectLifetime) actionEffects.shift();
     shakeTime = Math.max(0, shakeTime - dt);
     if (hitStopTime > 0) { hitStopTime = Math.max(0, hitStopTime - dt); return; }
     animationTime += dt;
@@ -1094,6 +1126,21 @@
     const box = attackBox();
     const front = player.attackFacing > 0 ? box.x : box.x + box.w;
     const tip = front + player.attackFacing * box.w;
+    if (MAP.ui?.actionEffects) {
+      ctx.save();
+      ctx.globalAlpha = 0.45 + 0.55 * player.attackTime / CONFIG.attackDuration;
+      ctx.fillStyle = "#acdfea";
+      ctx.beginPath();
+      ctx.moveTo(front, box.y + 4);
+      ctx.quadraticCurveTo(tip, box.y - 6, tip, box.y + box.h / 2);
+      ctx.quadraticCurveTo(tip, box.y + box.h - 5, front, box.y + box.h - 2);
+      const inner = tip - player.attackFacing * 14;
+      ctx.quadraticCurveTo(inner, box.y + box.h - 8, inner, box.y + box.h / 2);
+      ctx.quadraticCurveTo(inner, box.y + 4, front, box.y + 4);
+      ctx.fill();
+      ctx.restore();
+      return;
+    }
     ctx.strokeStyle = "#f0eee6";
     ctx.lineWidth = 3;
     ctx.beginPath();
@@ -1101,6 +1148,30 @@
     ctx.lineTo(tip, box.y + box.h / 2);
     ctx.lineTo(front + player.attackFacing * 12, box.y + box.h - 3);
     ctx.stroke();
+  }
+
+  function drawActionEffects() {
+    if (!actionEffects.length) return;
+    ctx.save();
+    ctx.lineCap = "round";
+    ctx.lineWidth = 2;
+    for (const effect of actionEffects) {
+      const style = effectStyle[effect.kind];
+      const age = (effectClock - effect.started) / CONFIG.actionEffectLifetime;
+      ctx.globalAlpha = 1 - age;
+      ctx.strokeStyle = style.color;
+      ctx.beginPath();
+      for (let i = 0; i < style.count; i++) {
+        const angle = Math.PI * (1 + style.sweep * i / (style.count - 1));
+        const dx = Math.cos(angle), dy = Math.sin(angle);
+        const radius = 4 + style.travel * (1 - (1 - age) ** 2) * (0.65 + 0.18 * (i % 3));
+        const tip = radius + style.streak * (1 - age);
+        ctx.moveTo(effect.x + dx * radius, effect.y + dy * radius);
+        ctx.lineTo(effect.x + dx * tip, effect.y + dy * tip);
+      }
+      ctx.stroke();
+    }
+    ctx.restore();
   }
 
   function drawBoss() {
@@ -1154,6 +1225,10 @@
   function drawCombat() {
     for (const enemy of enemiesByRoom[roomId]) {
       if (enemy.hp <= 0 && !["scavenger", "shell-guard", "sludge-crab"].includes(enemy.kind)) continue;
+      if (enemy.kind === "critter") {
+        drawCritter(enemy);
+        continue;
+      }
       ctx.fillStyle = enemy.flash > 0 ? "#ffffff" : enemy.state === "withdrawn" ? "#68717c"
         : enemy.state === "windup" ? "#edba7c" : ["lunge", "active"].includes(enemy.state) ? "#ed8383" : "#c38792";
       ctx.fillRect(Math.round(enemy.x), Math.round(enemy.y), enemy.w, enemy.h);
@@ -1180,6 +1255,18 @@
     drawBoss();
     ctx.fillStyle = "#e98181";
     for (const wave of waves) ctx.fillRect(Math.round(wave.x), wave.y, wave.w, wave.h);
+  }
+
+  function drawCritter(enemy) {
+    const x = Math.round(enemy.x), y = Math.round(enemy.y);
+    const step = Math.floor(animationTime * 12) % 2;
+    ctx.fillStyle = enemy.flash > 0 ? "#fff6ec" : "#d696a9";
+    ctx.fillRect(x + 4, y, 15, 4);
+    ctx.fillRect(x, y + 4, 24, 11);
+    ctx.fillRect(x + 2, y + 15, 5, 3 + step * 2);
+    ctx.fillRect(x + 16, y + 15, 5, 5 - step * 2);
+    ctx.fillStyle = "#492f41";
+    ctx.fillRect(x + (enemy.dir > 0 ? 17 : 4), y + 7, 3, 4);
   }
 
   function drawGuard(enemy) {
@@ -1364,6 +1451,7 @@
     drawCombat();
     drawPlayer();
     drawAttack();
+    drawActionEffects();
     ctx.restore();
     ctx.fillStyle = "#b5becc";
     ctx.font = "14px system-ui";
@@ -1628,6 +1716,7 @@
           cleared: progress.flags.has(currentRoom().encounter.flag) } : null,
         withdrawnEnemies: enemiesByRoom[roomId].filter(enemy => enemy.state === "withdrawn") } : {}),
       abilities: { ...progress.abilities },
+      ...(MAP.ui?.actionEffects ? { effects: actionEffects.map(({ kind, x, y }) => ({ kind, x, y })) } : {}),
       checkpoint: { id: progress.checkpoint, ...CHECKPOINTS[progress.checkpoint] },
       collected: [...progress.collected], totalCollectibles: COLLECTIBLE_IDS.length,
       visited: [...progress.visited], deaths, notice: noticeTime > 0 ? notice : "",

@@ -25,8 +25,9 @@
     "platformColor": "#b6bbc2",
     "automaticCheckpoints": true,
     "showMap": true,
+    "actionEffects": true,
     "controls": "← → / A D 移动　空格 长按跳高 / 点按短跳　↑ 门框　J 攻击　M 地图",
-    "note": "下层可直达。上层捷径从记忆袋开通，可走桥避开负壳蟹。育窟第一道断口会坠落，后面两处低槽可爬出。",
+    "note": "须帘和舌台下层有巡游小甲，可挥刀或跳过。上层捷径从记忆袋开通，可走桥绕过负壳蟹。",
     "saveNotice": "换房自动存档，R 返回当前路线的安全点。旧存档可继续，从头体验可点「新游戏」。",
     "canvasLabel": "R1 七区灰盒。左右移动，空格跳跃，门框旁按上方向键换区，J攻击，M地图，R返回安全点。"
   },
@@ -160,11 +161,14 @@
       ],
       "signs": [
         {"x":163,"y":549,"text":"从板左侧起跳 ↗"},
-        {"x":490,"y":618,"text":"下层直达舌台 →"}
+        {"x":479,"y":605,"text":"下层小甲 · 按 J 挥刀或跳过"}
       ],
       "items": [],
-      "enemies": [],
-      "mapLabel": "下层直走 / 侧边起跳"
+      "enemies": [
+        {"kind":"critter","x":693,"floor":660,"min":655,"max":738},
+        {"kind":"critter","x":888,"floor":660,"min":850,"max":936}
+      ],
+      "mapLabel": "下层小甲 / 上层分岔"
     },
     "r1-03": {
       "name": "R1-03 · 舌台",
@@ -268,8 +272,10 @@
         {"x":892,"y":297,"text":"高台沿右侧门框进入高桥"}
       ],
       "items": [],
-      "enemies": [],
-      "mapLabel": "下层通行 / 高台接桥"
+      "enemies": [
+        {"kind":"critter","x":1070,"floor":502,"min":1035,"max":1110}
+      ],
+      "mapLabel": "地面小甲 / 高台接桥"
     },
     "r1-04": {
       "name": "R1-04 · 负壳蟹",
@@ -611,7 +617,7 @@
       "name": "负壳蟹区 · 高桥"
     }
   },
-  "layoutVersion": 2,
+  "layoutVersion": 3,
   "routeLocks": {
     "上层": {
       "name": "上层捷径",
