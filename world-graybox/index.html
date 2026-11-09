@@ -58,7 +58,7 @@
     downStrikeWidth: 60,       // 下刺判定宽度，以角色中心为准
     downStrikeReach: 88,       // 下刺从脚底向下探测的距离
     downStrikeDuration: 0.24,  // 出招后仍可命中的时间
-    downStrikeBuffer: 0.14,    // 起跳前提前按 K 的宽限
+    downStrikeBuffer: 0.14,    // 起跳前提前按下刺键的宽限
     bounceSpeed: 760,          // 击中骨簧或敌人后的向上速度
 
     // 第一章食腐甲：只影响 kind=scavenger 的短遭遇，橙色蓄力后直线近扑。
@@ -1111,7 +1111,7 @@
       const acceleration = direction ? CONFIG.acceleration : CONFIG.deceleration;
       if (player.hurtTime <= 0) player.vx = approach(player.vx, direction * CONFIG.moveSpeed, acceleration * control * dt);
       // 松开空格只削减一次上升速度；长按则保留完整的上升过程。
-      if (!keys.has("Space") && player.vy < 0 && !player.jumpCut && player.hurtTime <= 0) {
+      if (!keys.has("Space") && !keys.has("KeyZ") && player.vy < 0 && !player.jumpCut && player.hurtTime <= 0) {
         player.vy *= CONFIG.jumpReleaseMultiplier;
         player.jumpCut = true;
       }
@@ -1419,7 +1419,7 @@
       ctx.fillRect(spring.x, spring.y, spring.w, 2);
       for (let x = spring.x + 8; x + 3 < spring.x + spring.w; x += 12) ctx.fillRect(x, spring.y + 5, 3, 5);
       ctx.textAlign = "center";
-      ctx.fillText("K", spring.x + spring.w / 2, spring.y - 8);
+      ctx.fillText("C / K", spring.x + spring.w / 2, spring.y - 8);
     }
     for (const [side, door] of Object.entries(room.doors)) {
       const left = side === "left";
@@ -1731,7 +1731,8 @@
   document.getElementById("close-map").addEventListener("click", closeWorldMap);
   document.getElementById("world-map").addEventListener("cancel", event => { event.preventDefault(); closeWorldMap(); });
 
-  const gameKeys = new Set(["ArrowLeft", "ArrowRight", "ArrowUp", "KeyA", "KeyD", "Space", "ShiftLeft", "ShiftRight", "KeyJ", "KeyK", "KeyR", "KeyF"]);
+  const gameKeys = new Set(["ArrowLeft", "ArrowRight", "ArrowUp", "KeyA", "KeyD", "Space", "ShiftLeft", "ShiftRight", "KeyJ", "KeyR", "KeyF"]);
+  const r1Keys = new Set(["ArrowDown", "KeyZ", "KeyX", "KeyC", "KeyK"]);
   window.addEventListener("keydown", event => {
     if (event.ctrlKey || event.metaKey || event.altKey) return;
     if (mapOpen || (event.code === "KeyM" && mapReady && MAP.ui?.showMap)) {
@@ -1741,17 +1742,17 @@
       }
       return;
     }
-    if (!mapReady || !gameKeys.has(event.code) || event.ctrlKey || event.metaKey || event.altKey) return;
-    if (!MAP.downStrike && event.code === "KeyK") return;
+    if (!mapReady || (!gameKeys.has(event.code) && !(MAP.downStrike && r1Keys.has(event.code)))) return;
     if (event.code === "ArrowUp" && !currentRoom().portals?.length && !currentRoom().interactions?.length) return;
     event.preventDefault();
     paused = false;
     if (event.repeat || keys.has(event.code)) return;
     keys.add(event.code);
-    if (event.code === "Space") jumpBuffer = CONFIG.jumpBufferTime;
+    if (event.code === "Space" || event.code === "KeyZ") jumpBuffer = CONFIG.jumpBufferTime;
     if (event.code === "ShiftLeft" || event.code === "ShiftRight") dashRequested = true;
-    if (event.code === "KeyJ") attackRequested = true;
-    if (event.code === "KeyK") downStrikeBuffer = CONFIG.downStrikeBuffer;
+    const downward = event.code === "KeyX" && keys.has("ArrowDown");
+    if (event.code === "KeyJ" || (event.code === "KeyX" && !downward)) attackRequested = true;
+    if (event.code === "KeyK" || event.code === "KeyC" || downward) downStrikeBuffer = CONFIG.downStrikeBuffer;
     if (event.code === "ArrowUp") portalRequested = true;
     if (event.code === "KeyR") {
       reset();
