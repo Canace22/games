@@ -172,6 +172,7 @@
   // 默认沿用五房地图；整图通过 ?map=world-map.json 选择。
   const MAP_FILE = new URLSearchParams(location.search).get("map") || "world-map.json";
   let MAP, ROOMS, CHECKPOINTS;
+  let backgroundImage;
   let COLLECTIBLE_IDS = [];
   let mapReady = false;
   let mapError = "";
@@ -250,6 +251,8 @@
     require(data?.schemaVersion === 1 && record(data.rooms) && Object.keys(data.rooms).length > 0, "rooms / schemaVersion");
     const visited = value => value === undefined || (Array.isArray(value) && value.every(id => Object.hasOwn(data.rooms, id)));
     require(data.saveKey === undefined || (typeof data.saveKey === "string" && data.saveKey.length > 0), "saveKey");
+    require(data.backgroundImage === undefined || (typeof data.backgroundImage === "string"
+      && /^[a-z0-9][a-z0-9.-]*\.(png|jpe?g|webp)$/i.test(data.backgroundImage)), "backgroundImage");
     require(data.ui?.actionEffects === undefined || typeof data.ui.actionEffects === "boolean", "ui.actionEffects");
     require(data.routeLocks === undefined || record(data.routeLocks), "routeLocks");
     require(data.storyFlags === undefined || (Array.isArray(data.storyFlags)
@@ -267,6 +270,8 @@
       if (data.ui?.showMap) require(numbers(room.position, ["x", "y"])
         && room.position.x >= 0 && room.position.y >= 0, `${id}.position`);
       require(room.mapLabel === undefined || typeof room.mapLabel === "string", `${id}.mapLabel`);
+      const crop = room.background;
+      require(crop === undefined || (data.backgroundImage && rect(crop) && crop.x >= 0 && crop.y >= 0), `${id}.background`);
       require(numbers(room, ["width", "height"]) && room.width >= VIEW.width && room.height >= VIEW.height
         && typeof room.name === "string" && typeof room.hint === "string", `rooms.${id}`);
       require(Array.isArray(room.platforms) && room.platforms.every(rect), `${id}.platforms`);
@@ -374,6 +379,11 @@
     if (ui.canvasLabel) canvas.setAttribute("aria-label", ui.canvasLabel);
     loadProgress();
     reset();
+    if (data.backgroundImage) {
+      backgroundImage = new Image();
+      backgroundImage.addEventListener("load", draw, { once: true });
+      backgroundImage.src = data.backgroundImage;
+    }
     notify(progress.checkpoint === MAP.startCheckpoint && !progress.abilities.doubleJump
       ? roomHint() : `从${CHECKPOINTS[progress.checkpoint].name}继续 · 已恢复本地进度`);
     requestAnimationFrame(frame);
@@ -1432,20 +1442,55 @@
     ctx.restore();
   }
 
+  function readyBackgroundCrop() {
+    const crop = currentRoom().background;
+    if (crop && backgroundImage?.naturalWidth >= crop.x + crop.w
+      && backgroundImage.naturalHeight >= crop.y + crop.h) return crop;
+    return null;
+  }
+
+  function drawRoomBackground() {
+    const crop = readyBackgroundCrop();
+    if (!crop) return false;
+    const room = currentRoom();
+    const scale = Math.max(VIEW.width / crop.w, VIEW.height / crop.h);
+    const width = Math.ceil(crop.w * scale), height = Math.ceil(crop.h * scale);
+    const pan = (cameraOffset, roomSize, viewSize, imageSize) => {
+      const range = roomSize - viewSize;
+      const offset = range > 0 ? clamp(cameraOffset, 0, range) - range / 2 : 0;
+      const speed = range > 0 ? Math.min(0.55, (imageSize - viewSize) / range) : 0;
+      return Math.round((viewSize - imageSize) / 2 - offset * speed);
+    };
+    ctx.save();
+    ctx.imageSmoothingEnabled = true;
+    ctx.drawImage(backgroundImage, crop.x, crop.y, crop.w, crop.h,
+      pan(camera.x, room.width, VIEW.width, width), pan(camera.y, room.height, VIEW.height, height), width, height);
+    ctx.fillStyle = "rgba(10, 20, 29, 0.48)";
+    ctx.fillRect(0, 0, VIEW.width, VIEW.height);
+    ctx.restore();
+    return true;
+  }
+
   function draw() {
     if (!mapReady) return;
     ctx.imageSmoothingEnabled = false;
     ctx.fillStyle = "#242a34";
     ctx.fillRect(0, 0, VIEW.width, VIEW.height);
+    const withBackground = drawRoomBackground();
     ctx.save();
     const shake = CONFIG.shakeDuration > 0 ? shakeTime / CONFIG.shakeDuration * CONFIG.shakeStrength : 0;
     ctx.translate(-Math.round(camera.x) + Math.round(Math.sin(effectClock * 190) * shake),
       -Math.round(camera.y) + Math.round(Math.cos(effectClock * 157) * shake));
-    ctx.fillStyle = MAP.ui?.platformColor || "#687587";
+    const platformColor = withBackground ? "rgba(23, 38, 51, 0.76)" : MAP.ui?.platformColor || "#687587";
     for (const p of currentRoom().platforms) {
       if (p.x + p.w < camera.x || p.x > camera.x + VIEW.width
         || p.y + p.h < camera.y || p.y > camera.y + VIEW.height) continue;
+      ctx.fillStyle = platformColor;
       ctx.fillRect(p.x, p.y, p.w, p.h);
+      if (withBackground) {
+        ctx.fillStyle = "#bcd3dd";
+        ctx.fillRect(p.x, p.y, p.w, 2);
+      }
     }
     drawRoomObjects();
     drawCombat();
@@ -1702,6 +1747,7 @@
       room: { id: roomId, name: currentRoom().name, width: currentRoom().width,
         height: currentRoom().height, doors: currentRoom().doors },
       mapId: MAP.id,
+      ...(MAP.backgroundImage ? { background: { image: MAP.backgroundImage, crop: readyBackgroundCrop() } } : {}),
       mapOpen,
       portals: (currentRoom().portals || []).map(portal => ({ ...portal, open: conditionsMet(portal) })),
       markers: currentRoom().markers || [],

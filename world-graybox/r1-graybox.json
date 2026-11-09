@@ -4,6 +4,7 @@
   "name": "鲸落万物生 · R1 七区灰盒",
   "saveKey": "whalefall-r1-reference-graybox-v1",
   "startCheckpoint": "r1-01",
+  "backgroundImage": "r1-reference.png",
   "storyFlags": [
     "r1-finished",
     "r1-crab-retreated"
@@ -27,13 +28,14 @@
     "showMap": true,
     "actionEffects": true,
     "controls": "← → / A D 移动　空格 长按跳高 / 点按短跳　↑ 门框　J 攻击　M 地图",
-    "note": "须帘和舌台下层有巡游小甲，可挥刀或跳过。上层捷径从记忆袋开通，可走桥绕过负壳蟹。",
+    "note": "原图随房间切换，以浅色边线为可站立台面。须帘和舌台下层有巡游小甲，可挥刀或跳过。上层捷径可绕过负壳蟹。",
     "saveNotice": "换房自动存档，R 返回当前路线的安全点。旧存档可继续，从头体验可点「新游戏」。",
     "canvasLabel": "R1 七区灰盒。左右移动，空格跳跃，门框旁按上方向键换区，J攻击，M地图，R返回安全点。"
   },
   "rooms": {
     "r1-01": {
       "name": "R1-01 · 外伤坡",
+      "background": {"x":78,"y":229,"w":195,"h":111},
       "width": 1120,
       "height": 660,
       "position": {
@@ -84,6 +86,7 @@
     },
     "r1-02": {
       "name": "R1-02 · 须帘",
+      "background": {"x":330,"y":216,"w":260,"h":115},
       "width": 1460,
       "height": 760,
       "position": {
@@ -172,6 +175,7 @@
     },
     "r1-03": {
       "name": "R1-03 · 舌台",
+      "background": {"x":578,"y":236,"w":219,"h":110},
       "width": 1280,
       "height": 760,
       "position": {
@@ -279,6 +283,7 @@
     },
     "r1-04": {
       "name": "R1-04 · 负壳蟹",
+      "background": {"x":796,"y":232,"w":346,"h":118},
       "width": 1240,
       "height": 715,
       "position": {
@@ -365,6 +370,7 @@
     },
     "r1-05": {
       "name": "R1-05 · 流膜育窟",
+      "background": {"x":1135,"y":250,"w":184,"h":116},
       "width": 1280,
       "height": 795,
       "position": {
@@ -425,6 +431,7 @@
     },
     "r1-06": {
       "name": "R1-06 · 喷气孔上层",
+      "background": {"x":354,"y":51,"w":199,"h":145},
       "width": 1160,
       "height": 835,
       "position": {
@@ -491,6 +498,7 @@
     },
     "r1-07": {
       "name": "R1-07 · 鲸须记忆袋",
+      "background": {"x":557,"y":51,"w":199,"h":163},
       "width": 1240,
       "height": 750,
       "position": {
