@@ -5,6 +5,7 @@
   "saveKey": "whalefall-r1-reference-graybox-v1",
   "startCheckpoint": "r1-01",
   "backgroundImage": "r1-bob-backgrounds.webp",
+  "overviewImage": "r1-reference.png",
   "storyFlags": [
     "r1-finished",
     "r1-crab-retreated"

@@ -60,6 +60,10 @@
     downStrikeDuration: 0.24,  // 出招后仍可命中的时间
     downStrikeBuffer: 0.14,    // 起跳前提前按下刺键的宽限
     bounceSpeed: 760,          // 击中骨簧或敌人后的向上速度
+    endingFade: 0.85,          // 从实机淡入总图的时间
+    endingBreakAt: 1.55,       // 总图开始散架的时刻
+    endingTitleAt: 6.5,        // 碎片落下后显示片尾文字
+    endingReadyAt: 8,          // 片尾文字完全出现后可返回
 
     // 第一章食腐甲：只影响 kind=scavenger 的短遭遇，橙色蓄力后直线近扑。
     scavengerWindup: 0.55,     // 近扑前摇，朝向在前摇开始时锁定
@@ -177,7 +181,7 @@
   // 默认沿用五房地图；整图通过 ?map=world-map.json 选择。
   const MAP_FILE = new URLSearchParams(location.search).get("map") || "world-map.json";
   let MAP, ROOMS, CHECKPOINTS;
-  let backgroundImage;
+  let backgroundImage, overviewImage;
   let COLLECTIBLE_IDS = [];
   let mapReady = false;
   let mapError = "";
@@ -201,6 +205,7 @@
   let manualTime = false;
   let paused = false;
   let mapOpen = false;
+  let ending = null;
   let pausedBeforeMap = false;
   let roomId = "";
   let deaths = 0;
@@ -259,8 +264,10 @@
     require(data?.schemaVersion === 1 && record(data.rooms) && Object.keys(data.rooms).length > 0, "rooms / schemaVersion");
     const visited = value => value === undefined || (Array.isArray(value) && value.every(id => Object.hasOwn(data.rooms, id)));
     require(data.saveKey === undefined || (typeof data.saveKey === "string" && data.saveKey.length > 0), "saveKey");
-    require(data.backgroundImage === undefined || (typeof data.backgroundImage === "string"
-      && /^[a-z0-9][a-z0-9.-]*\.(png|jpe?g|webp)$/i.test(data.backgroundImage)), "backgroundImage");
+    for (const field of ["backgroundImage", "overviewImage"]) {
+      require(data[field] === undefined || (typeof data[field] === "string"
+        && /^[a-z0-9][a-z0-9.-]*\.(png|jpe?g|webp)$/i.test(data[field])), field);
+    }
     require(data.ui?.actionEffects === undefined || typeof data.ui.actionEffects === "boolean", "ui.actionEffects");
     require(data.downStrike === undefined || typeof data.downStrike === "boolean", "downStrike");
     require(data.routeLocks === undefined || record(data.routeLocks), "routeLocks");
@@ -312,6 +319,9 @@
       require(room.interactions === undefined || (Array.isArray(room.interactions) && room.interactions.every(item => rect(item)
         && typeof item.id === "string" && typeof item.label === "string" && typeof item.message === "string"
         && ["resident", "observation", "exit"].includes(item.kind) && data.storyFlags?.includes(item.setsFlag)
+        && (item.ending === undefined || (item.kind === "exit" && record(item.ending)
+          && typeof item.ending.title === "string" && item.ending.title.trim() && rect(item.ending.crop)
+          && item.ending.crop.x >= 0 && item.ending.crop.y >= 0))
         && flagConditions(item))), `${id}.interactions`);
       if (room.encounter) {
         require(typeof room.encounter.id === "string" && data.storyFlags?.includes(room.encounter.flag)
@@ -361,6 +371,18 @@
     }
   }
 
+  function loadMapImage(file, onReady) {
+    if (!file) return;
+    const image = new Image();
+    image.src = file;
+    image.decode().then(() => {
+      onReady(image);
+      draw();
+    }, () => {
+      // 图片失败时，照常显示默认灰盒背景或片尾示意图。
+    });
+  }
+
   function useMap(data) {
     if (mapReady) return;
     validateMap(data);
@@ -390,15 +412,9 @@
     if (ui.canvasLabel) canvas.setAttribute("aria-label", ui.canvasLabel);
     loadProgress();
     reset();
-    if (data.backgroundImage) {
-      const image = new Image();
-      image.src = data.backgroundImage;
-      image.decode().then(() => {
-        backgroundImage = image;
-        draw();
-      }, () => {
-        // 底图加载或解码失败时，继续使用默认灰盒背景。
-      });
+    loadMapImage(data.backgroundImage, image => { backgroundImage = image; });
+    if (data.overviewImage !== data.backgroundImage) {
+      loadMapImage(data.overviewImage, image => { overviewImage = image; });
     }
     notify(progress.checkpoint === MAP.startCheckpoint && !progress.abilities.doubleJump
       ? roomHint() : `从${CHECKPOINTS[progress.checkpoint].name}继续 · 已恢复本地进度`);
@@ -491,6 +507,7 @@
   }
 
   function reset() {
+    ending = null;
     const checkpoint = CHECKPOINTS[progress.checkpoint];
     roomId = checkpoint.room;
     progress.visited.add(roomId);
@@ -594,11 +611,21 @@
       && (item.unlessFlags || []).every(id => !progress.flags.has(id)));
     if (!item) return false;
     if (!conditionsMet(item)) { notify(item.lockedMessage || "先完成当前目标"); return true; }
+    if (item.ending) { startEnding(item); return true; }
     const done = progress.flags.has(item.setsFlag);
     if (done && item.kind === "exit") return false;
     progress.flags.add(item.setsFlag);
     saveProgress();
     notify(done ? item.repeatMessage || item.message : item.message);
+    return true;
+  }
+
+  function checkEndingArrival() {
+    if (!player.grounded) return false;
+    const exit = currentRoom().interactions?.find(item => item.ending && !progress.flags.has(item.setsFlag)
+      && overlaps(item) && conditionsMet(item));
+    if (!exit) return false;
+    startEnding(exit);
     return true;
   }
 
@@ -1072,6 +1099,10 @@
   }
 
   function update(dt) {
+    if (ending) {
+      ending.time = Math.min(CONFIG.endingReadyAt, ending.time + dt);
+      return;
+    }
     effectClock += dt;
     while (actionEffects.length && effectClock - actionEffects[0].started >= CONFIG.actionEffectLifetime) actionEffects.shift();
     shakeTime = Math.max(0, shakeTime - dt);
@@ -1130,7 +1161,9 @@
     }
     if (player.x < 0 && doorIsOpen("left")) changeRoom("left");
     else if (player.x + BODY.width > currentRoom().width && doorIsOpen("right")) changeRoom("right");
+    if (checkEndingArrival()) return;
     if (portalRequested) { portalRequested = false; if (!enterInteraction()) enterPortal(); }
+    if (ending) return;
     updateObjects();
     updateCombat(dt);
     updateStory(dt);
@@ -1484,8 +1517,10 @@
       }
       ctx.font = "13px system-ui";
       const chapter = currentRoom().chapterLabel || "第一章";
-      ctx.fillText(done && item.kind === "exit" ? (exitPortals?.length ? `${chapter}完成 · ↑ 继续` : `${chapter}完成 · 可回访`) : item.label,
-        item.x + item.w / 2, item.y - 14);
+      let label = item.label;
+      if (done && item.kind === "exit") label = exitPortals?.length ? `${chapter}完成 · ↑ 继续` : `${chapter}完成 · 可回访`;
+      if (done && item.ending) label = "试玩完成 · ↑ 重看";
+      ctx.fillText(label, item.x + item.w / 2, item.y - 14);
     }
   }
 
@@ -1546,8 +1581,149 @@
     return true;
   }
 
+  function buildEndingArt(crop) {
+    const art = document.createElement("canvas");
+    art.width = 880;
+    art.height = 250;
+    const ink = art.getContext("2d");
+    const image = MAP.overviewImage && MAP.overviewImage !== MAP.backgroundImage ? overviewImage : backgroundImage;
+    if (image?.naturalWidth >= crop.x + crop.w && image.naturalHeight >= crop.y + crop.h) {
+      const scale = Math.min(art.width / crop.w, art.height / crop.h);
+      const w = crop.w * scale, h = crop.h * scale;
+      ink.drawImage(image, crop.x, crop.y, crop.w, crop.h, (art.width - w) / 2, (art.height - h) / 2, w, h);
+      return { art, source: "reference" };
+    }
+    // 图片未能解码时，以关卡格子保留总图和片尾。
+    const rooms = Object.values(ROOMS);
+    const points = rooms.map((room, index) => room.position || { x: index, y: 0 });
+    const cellW = art.width / (Math.max(...points.map(p => p.x)) + 1);
+    const cellH = art.height / (Math.max(...points.map(p => p.y)) + 1);
+    ink.font = "14px system-ui";
+    ink.textAlign = "center";
+    points.forEach(({ x, y }, index) => {
+      ink.fillStyle = "#183b4b";
+      ink.fillRect(x * cellW + 7, y * cellH + 20, cellW - 14, cellH - 40);
+      ink.fillStyle = "#d3e1e0";
+      ink.fillText(rooms[index].name, (x + 0.5) * cellW, (y + 0.5) * cellH);
+    });
+    return { art, source: "layout" };
+  }
+
+  function splitEndingArt(art) {
+    // 相邻碎片共用顶点，散开前仍能拼回原图。
+    const columns = 18, rows = 5, cellW = art.width / columns, cellH = art.height / rows;
+    let seed = 104729;
+    const random = () => ((seed = seed * 16807 % 2147483647) / 2147483647);
+    const grid = Array.from({ length: rows + 1 }, (_, row) => Array.from({ length: columns + 1 }, (_, col) => ({
+      x: col * cellW + (col > 0 && col < columns ? (random() - 0.5) * cellW * 0.65 : 0),
+      y: row * cellH + (row > 0 && row < rows ? (random() - 0.5) * cellH * 0.65 : 0),
+    })));
+    const pieces = [];
+    for (let row = 0; row < rows; row++) for (let col = 0; col < columns; col++) {
+      const a = grid[row][col], b = grid[row][col + 1], c = grid[row + 1][col + 1], d = grid[row + 1][col];
+      for (const points of (row + col) % 2 ? [[a, b, d], [b, c, d]] : [[a, b, c], [a, c, d]]) {
+        const xs = points.map(p => p.x), ys = points.map(p => p.y);
+        const x = Math.min(...xs), y = Math.min(...ys);
+        const w = Math.max(...xs) - x, h = Math.max(...ys) - y;
+        const cx = x + w / 2, cy = y + h / 2;
+        pieces.push({ points, x, y, w, h, cx, cy,
+          start: CONFIG.endingBreakAt + (1 - cx / art.width) * 1.58 + random() * 0.45,
+          drift: (random() - 0.5) * 145, fall: 115 + random() * 200, spin: (random() - 0.5) * 1.8,
+        });
+      }
+    }
+    return pieces;
+  }
+
+  function startEnding(exit) {
+    if (!progress.flags.has(exit.setsFlag)) {
+      progress.flags.add(exit.setsFlag);
+      saveProgress();
+    }
+    const { art, source } = buildEndingArt(exit.ending.crop);
+    ending = { time: 0, art, source, pieces: splitEndingArt(art), title: exit.ending.title, message: exit.message };
+    player.vx = player.vy = 0;
+    clearInput();
+  }
+
+  function closeEnding() {
+    if (ending.time < CONFIG.endingReadyAt) return;
+    const message = ending.message;
+    ending = null;
+    paused = false;
+    notify(message);
+    canvas.focus();
+    draw();
+  }
+
+  function drawEndingPieces(art, pieces, time) {
+    for (const piece of pieces) {
+      const { points, x, y, w, h, cx, cy, start, drift, fall, spin } = piece;
+      const age = clamp((time - start) / 2.85, 0, 1);
+      if (age >= 1) continue;
+      ctx.save();
+      ctx.globalAlpha = 1 - clamp((age - 0.33) / 0.67, 0, 1);
+      ctx.translate(cx + drift * age, cy + fall * age ** 1.65);
+      ctx.rotate(spin * age);
+      ctx.beginPath();
+      ctx.moveTo(points[0].x - cx, points[0].y - cy);
+      ctx.lineTo(points[1].x - cx, points[1].y - cy);
+      ctx.lineTo(points[2].x - cx, points[2].y - cy);
+      ctx.closePath();
+      ctx.clip();
+      ctx.drawImage(art, x, y, w, h, x - cx, y - cy, w, h);
+      ctx.restore();
+    }
+  }
+
+  function drawEnding() {
+    const { time, art, pieces, title } = ending;
+    const ease = t => { const n = clamp(t, 0, 1); return n * n * (3 - 2 * n); };
+    ctx.save();
+    ctx.globalAlpha = ease(time / CONFIG.endingFade);
+    const stage = ctx.createRadialGradient(VIEW.width / 2, VIEW.height * 0.43, 20, VIEW.width / 2, VIEW.height / 2, 610);
+    stage.addColorStop(0, "#102732");
+    stage.addColorStop(1, "#050b12");
+    ctx.fillStyle = stage;
+    ctx.fillRect(0, 0, VIEW.width, VIEW.height);
+    if (time < CONFIG.endingTitleAt) {
+      ctx.save();
+      ctx.imageSmoothingEnabled = true;
+      ctx.globalCompositeOperation = "screen";
+      ctx.translate(VIEW.width / 2, VIEW.height * 0.43);
+      const zoom = 1 + 0.075 * (1 - ease(time / CONFIG.endingBreakAt));
+      ctx.scale(zoom, zoom);
+      ctx.translate(-art.width / 2, -art.height / 2);
+      if (time < CONFIG.endingBreakAt) {
+        ctx.globalAlpha = ease((time - 0.16) / 0.82);
+        ctx.drawImage(art, 0, 0);
+      } else {
+        drawEndingPieces(art, pieces, time);
+      }
+      ctx.restore();
+    } else {
+      const fade = ease((time - CONFIG.endingTitleAt) / (CONFIG.endingReadyAt - CONFIG.endingTitleAt));
+      ctx.globalAlpha = fade;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.font = '600 56px "Songti SC", "Noto Serif CJK SC", serif';
+      ctx.fillStyle = "#ecf1e4";
+      ctx.shadowColor = "#78bbc2";
+      ctx.shadowBlur = 20 * (1 - fade);
+      ctx.fillText(title, VIEW.width / 2, VIEW.height * 0.48, VIEW.width - 80);
+      if (time >= CONFIG.endingReadyAt) {
+        ctx.shadowBlur = 0;
+        ctx.font = "14px system-ui";
+        ctx.fillStyle = "#a0b4bb";
+        ctx.fillText("空格 / Enter 继续", VIEW.width / 2, VIEW.height * 0.82);
+      }
+    }
+    ctx.restore();
+  }
+
   function draw() {
     if (!mapReady) return;
+    if (ending && ending.time >= CONFIG.endingFade) { drawEnding(); return; }
     ctx.imageSmoothingEnabled = false;
     ctx.fillStyle = "#242a34";
     ctx.fillRect(0, 0, VIEW.width, VIEW.height);
@@ -1614,6 +1790,7 @@
     dashStatus.textContent = !progress.abilities.dash ? "冲刺未解锁" : player.cooldown > 0
       ? `冲刺冷却 ${player.cooldown.toFixed(1)} 秒` : "冲刺就绪";
     document.getElementById("collection-status").textContent = `收集 ${progress.collected.size} / ${COLLECTIBLE_IDS.length}`;
+    if (ending) drawEnding();
   }
 
   function mapElement(parent, tag, attrs = {}, text = "") {
@@ -1705,7 +1882,7 @@
   }
 
   function openWorldMap() {
-    if (!mapReady || !MAP.ui?.showMap || mapOpen) return;
+    if (!mapReady || !MAP.ui?.showMap || mapOpen || ending) return;
     pausedBeforeMap = paused;
     pause();
     mapOpen = true;
@@ -1735,6 +1912,12 @@
   const r1Keys = new Set(["ArrowDown", "KeyZ", "KeyX", "KeyC", "KeyK"]);
   window.addEventListener("keydown", event => {
     if (event.ctrlKey || event.metaKey || event.altKey) return;
+    if (ending && event.code !== "KeyF") {
+      const continueKey = ["Escape", "Space", "Enter"].includes(event.code);
+      if (continueKey || gameKeys.has(event.code) || r1Keys.has(event.code) || event.code === "KeyM") event.preventDefault();
+      if (continueKey && !event.repeat) closeEnding();
+      return;
+    }
     if (mapOpen || (event.code === "KeyM" && mapReady && MAP.ui?.showMap)) {
       if (!event.repeat && (event.code === "KeyM" || event.code === "Escape")) {
         event.preventDefault();
@@ -1766,20 +1949,28 @@
   });
   window.addEventListener("keyup", event => keys.delete(event.code));
 
-  function pause() {
+  function clearInput() {
     keys.clear();
     jumpBuffer = 0;
     dashRequested = false;
     attackRequested = false;
     downStrikeBuffer = 0;
     portalRequested = false;
+  }
+
+  function pause() {
+    clearInput();
     paused = true;
     accumulator = 0;
     draw();
   }
   window.addEventListener("blur", pause);
   document.addEventListener("visibilitychange", () => { if (document.hidden) pause(); });
-  canvas.addEventListener("pointerdown", () => { paused = false; canvas.focus(); });
+  canvas.addEventListener("pointerdown", () => {
+    if (ending) { closeEnding(); return; }
+    paused = false;
+    canvas.focus();
+  });
   document.getElementById("restart").addEventListener("click", () => {
     paused = false;
     reset();
@@ -1794,7 +1985,7 @@
   function frame(now) {
     const elapsed = Math.min((now - (lastFrame || now)) / 1000, 0.05);
     lastFrame = now;
-    if (!manualTime && !paused) {
+    if (!manualTime && (!paused || ending)) {
       accumulator += elapsed;
       while (accumulator >= STEP) {
         accumulator -= STEP;
@@ -1810,14 +2001,21 @@
     if (!mapReady) return;
     manualTime = true;
     const steps = Math.max(0, Math.round(ms / (STEP * 1000)));
-    for (let i = 0; i < steps; i++) if (!paused) update(STEP);
+    for (let i = 0; i < steps; i++) if (!paused || ending) update(STEP);
     draw();
   };
   window.render_game_to_text = () => {
     if (!mapReady) return JSON.stringify({ mode: mapError ? "map-error" : "loading", error: mapError });
     return JSON.stringify({
       coordinates: "世界坐标；左上原点；x 向右，y 向下；单位 px，时间 s",
-      mode: paused ? "paused" : "playing",
+      mode: ending ? "ending" : paused ? "paused" : "playing",
+      ...(ending ? { ending: {
+        time: ending.time,
+        phase: ending.time >= CONFIG.endingTitleAt ? "title" : ending.time >= CONFIG.endingBreakAt ? "breaking" : "overview",
+        title: ending.time >= CONFIG.endingTitleAt ? ending.title : "",
+        ready: ending.time >= CONFIG.endingReadyAt,
+        source: ending.source,
+      } } : {}),
       player: { ...player, width: BODY.width, height: BODY.height,
         pose: player.dashTime > 0 ? "dash" : !player.grounded ? "jump"
           : Math.abs(player.vx) > 15 ? "run" : "idle" },
