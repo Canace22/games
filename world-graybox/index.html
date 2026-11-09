@@ -289,6 +289,8 @@
       require(room.mapLabel === undefined || typeof room.mapLabel === "string", `${id}.mapLabel`);
       const crop = room.background;
       require(crop === undefined || (data.backgroundImage && rect(crop) && crop.x >= 0 && crop.y >= 0), `${id}.background`);
+      require(room.paintedTerrain === undefined || (room.paintedTerrain === true && data.backgroundFit === "room"
+        && crop?.w === room.width && crop?.h === room.height), `${id}.paintedTerrain`);
       require(numbers(room, ["width", "height"]) && room.width >= VIEW.width && room.height >= VIEW.height
         && typeof room.name === "string" && typeof room.hint === "string", `rooms.${id}`);
       require(Array.isArray(room.platforms) && room.platforms.every(rect), `${id}.platforms`);
@@ -1441,7 +1443,7 @@
     return item.kind === "ability" ? !progress.abilities[item.id] : !progress.collected.has(item.id);
   }
 
-  function drawRoomObjects() {
+  function drawRoomObjects(paintedTerrain) {
     const room = currentRoom();
     ctx.font = "14px system-ui";
     for (const spring of room.springs || []) {
@@ -1491,7 +1493,7 @@
         ctx.textAlign = "left";
       }
     }
-    drawPortalsAndMarkers();
+    drawPortalsAndMarkers(paintedTerrain);
     drawInteractions();
   }
 
@@ -1525,7 +1527,7 @@
     }
   }
 
-  function drawPortalsAndMarkers() {
+  function drawPortalsAndMarkers(paintedTerrain) {
     ctx.save();
     ctx.textAlign = "center";
     ctx.font = "14px system-ui";
@@ -1535,7 +1537,14 @@
       const open = conditionsMet(portal);
       ctx.strokeStyle = ctx.fillStyle = open ? "#e7e9ed" : "#8793a4";
       ctx.lineWidth = 2;
-      ctx.strokeRect(portal.x, portal.y, portal.w, portal.h);
+      if (paintedTerrain) {
+        const x = portal.x + portal.w / 2, y = portal.y + portal.h - 11;
+        ctx.beginPath();
+        ctx.arc(x, y, 6, 0, Math.PI * 2);
+        ctx.stroke();
+      } else {
+        ctx.strokeRect(portal.x, portal.y, portal.w, portal.h);
+      }
       const center = clamp(portal.x + portal.w / 2, 125, currentRoom().width - 125);
       ctx.fillText(portal.label, center, portal.y - 28);
       const instruction = !open ? portal.lockedHint
@@ -1560,9 +1569,8 @@
     return null;
   }
 
-  function drawRoomBackground() {
-    const crop = readyBackgroundCrop();
-    if (!crop) return false;
+  function drawRoomBackground(crop, shakeX, shakeY) {
+    if (!crop) return;
     const room = currentRoom();
     const inRoom = MAP.backgroundFit === "room";
     const frame = inRoom ? room : VIEW;
@@ -1574,17 +1582,18 @@
       const speed = range > 0 ? Math.min(0.55, (imageSize - viewSize) / range) : 0;
       return Math.round((viewSize - imageSize) / 2 - offset * speed);
     };
-    const x = inRoom ? Math.round((room.width - width) / 2) - Math.round(camera.x)
+    const x = inRoom ? Math.round((room.width - width) / 2) - Math.round(camera.x) + shakeX
       : pan(camera.x, room.width, VIEW.width, width);
-    const y = inRoom ? Math.round((room.height - height) / 2) - Math.round(camera.y)
+    const y = inRoom ? Math.round((room.height - height) / 2) - Math.round(camera.y) + shakeY
       : pan(camera.y, room.height, VIEW.height, height);
     ctx.save();
     ctx.imageSmoothingEnabled = true;
     ctx.drawImage(backgroundImage, crop.x, crop.y, crop.w, crop.h, x, y, width, height);
-    ctx.fillStyle = "rgba(10, 20, 29, 0.48)";
-    ctx.fillRect(0, 0, VIEW.width, VIEW.height);
+    if (!room.paintedTerrain) {
+      ctx.fillStyle = "rgba(10, 20, 29, 0.48)";
+      ctx.fillRect(0, 0, VIEW.width, VIEW.height);
+    }
     ctx.restore();
-    return true;
   }
 
   function buildEndingArt(crop) {
@@ -1733,23 +1742,33 @@
     ctx.imageSmoothingEnabled = false;
     ctx.fillStyle = "#242a34";
     ctx.fillRect(0, 0, VIEW.width, VIEW.height);
-    const withBackground = drawRoomBackground();
-    ctx.save();
+    const room = currentRoom(), crop = readyBackgroundCrop();
+    const paintedTerrain = Boolean(crop && room.paintedTerrain);
     const shake = CONFIG.shakeDuration > 0 ? shakeTime / CONFIG.shakeDuration * CONFIG.shakeStrength : 0;
-    ctx.translate(-Math.round(camera.x) + Math.round(Math.sin(effectClock * 190) * shake),
-      -Math.round(camera.y) + Math.round(Math.cos(effectClock * 157) * shake));
-    const platformColor = withBackground ? "rgba(23, 38, 51, 0.76)" : MAP.ui?.platformColor || "#687587";
-    for (const p of currentRoom().platforms) {
-      if (p.x + p.w < camera.x || p.x > camera.x + VIEW.width
-        || p.y + p.h < camera.y || p.y > camera.y + VIEW.height) continue;
-      ctx.fillStyle = platformColor;
-      ctx.fillRect(p.x, p.y, p.w, p.h);
-      if (withBackground) {
-        ctx.fillStyle = "#bcd3dd";
-        ctx.fillRect(p.x, p.y, p.w, 2);
+    const cameraX = Math.round(camera.x), cameraY = Math.round(camera.y);
+    let shakeX = Math.round(Math.sin(effectClock * 190) * shake);
+    let shakeY = Math.round(Math.cos(effectClock * 157) * shake);
+    if (paintedTerrain) {
+      shakeX = clamp(shakeX, cameraX + VIEW.width - room.width, cameraX);
+      shakeY = clamp(shakeY, cameraY + VIEW.height - room.height, cameraY);
+    }
+    drawRoomBackground(crop, paintedTerrain ? shakeX : 0, paintedTerrain ? shakeY : 0);
+    ctx.save();
+    ctx.translate(shakeX - cameraX, shakeY - cameraY);
+    if (!paintedTerrain) {
+      const platformColor = crop ? "rgba(23, 38, 51, 0.76)" : MAP.ui?.platformColor || "#687587";
+      for (const p of room.platforms) {
+        if (p.x + p.w < camera.x || p.x > camera.x + VIEW.width
+          || p.y + p.h < camera.y || p.y > camera.y + VIEW.height) continue;
+        ctx.fillStyle = platformColor;
+        ctx.fillRect(p.x, p.y, p.w, p.h);
+        if (crop) {
+          ctx.fillStyle = "#bcd3dd";
+          ctx.fillRect(p.x, p.y, p.w, 2);
+        }
       }
     }
-    drawRoomObjects();
+    drawRoomObjects(paintedTerrain);
     drawCombat();
     drawPlayer();
     drawAttack();
