@@ -154,7 +154,7 @@
     <header><h2 id="world-map-title">完整地图</h2><button id="close-map" type="button">返回游戏 · M / Esc</button></header>
     <p id="map-location"></p>
     <div id="map-graph" tabindex="0" aria-label="整图，可横向滚动"></div>
-    <div class="map-legend"><span>蓝色框：你在这里</span><span>灰实框：已到达</span><span>灰虚框：未到达</span><span id="map-shortcut-legend" hidden>A/B：虚线未打通，实线已打通</span><span id="map-return-legend" hidden>紫色：11→09→12 回访</span></div>
+    <div class="map-legend"><span>蓝色框：你在这里</span><span>灰实框：已到达</span><span>灰虚框：未到达</span><span id="map-shortcut-legend" hidden>捷径：虚线未打通，实线已打通</span><span id="map-return-legend" hidden>紫色：11→09→12 回访</span></div>
   </dialog>
   <script>
   "use strict";
@@ -254,6 +254,7 @@
     for (const [id, room] of Object.entries(data.rooms)) {
       if (data.ui?.showMap) require(numbers(room.position, ["x", "y"])
         && room.position.x >= 0 && room.position.y >= 0, `${id}.position`);
+      require(room.mapLabel === undefined || typeof room.mapLabel === "string", `${id}.mapLabel`);
       require(numbers(room, ["width", "height"]) && room.width >= VIEW.width && room.height >= VIEW.height
         && typeof room.name === "string" && typeof room.hint === "string", `rooms.${id}`);
       require(Array.isArray(room.platforms) && room.platforms.every(rect), `${id}.platforms`);
@@ -271,7 +272,8 @@
         itemIds.add(item.id);
       }
       require(Array.isArray(room.enemies) && room.enemies.every(enemy => numbers(enemy, ["x", "floor", "min", "max"])
-        && enemy.min <= enemy.x && enemy.x <= enemy.max), `${id}.enemies`);
+        && enemy.min <= enemy.x && enemy.x <= enemy.max
+        && (enemy.triggerHeight === undefined || (Number.isFinite(enemy.triggerHeight) && enemy.triggerHeight > 0))), `${id}.enemies`);
       require(!room.enemies.some(enemy => ["scavenger", "shell-guard", "sludge-crab"].includes(enemy.kind)) || record(room.encounter), `${id}.encounter`);
       for (const field of ["barriers", "scenes"]) require(room[field] === undefined || (Array.isArray(room[field])
         && room[field].every(item => rect(item) && flagConditions(item) && typeof item.label === "string")), `${id}.${field}`);
@@ -309,6 +311,8 @@
           && typeof portal.label === "string" && abilities(portal.requiredAbilities) && visited(portal.requiresVisited)
           && Object.hasOwn(data.rooms, portal.to) && flagConditions(portal), `${id}.portals`);
         require(numbers(data.rooms[portal.to].entrances?.[portal.arrival], ["x", "floor"]), `${id}.portals.${portal.id}.arrival`);
+        require(portal.checkpoint === undefined || (typeof portal.checkpoint === "string" && data.checkpoints?.[portal.checkpoint]?.room === portal.to),
+          `${id}.portals.${portal.id}.checkpoint`);
         require(portal.requiresRoutes === undefined || (Array.isArray(portal.requiresRoutes)
           && portal.requiresRoutes.every(key => Object.hasOwn(data.routeLocks || {}, key))), `${id}.portals.${portal.id}.requiresRoutes`);
         require(portal.opensRoute === undefined || Object.hasOwn(data.routeLocks || {}, portal.opensRoute), `${id}.portals.${portal.id}.opensRoute`);
@@ -508,7 +512,7 @@
     finishRoomChange();
   }
 
-  function finishRoomChange() {
+  function finishRoomChange(checkpoint = currentRoom().checkpoint) {
     player.attackTime = 0;
     attackRequested = false;
     portalRequested = false;
@@ -517,8 +521,8 @@
     shakeTime = 0;
     boss = createBoss();
     progress.visited.add(roomId);
-    if (currentRoom().checkpoint) {
-      progress.checkpoint = currentRoom().checkpoint;
+    if (checkpoint) {
+      progress.checkpoint = checkpoint;
       checkpointTouch = progress.checkpoint;
     }
     Object.assign(camera, cameraTarget(true));
@@ -539,7 +543,7 @@
       vx: 0, vy: 0, grounded: true, coyote: CONFIG.coyoteTime, dashTime: 0, extraJumpUsed: false });
     jumpBuffer = 0;
     dashRequested = false;
-    finishRoomChange();
+    finishRoomChange(portal.checkpoint);
     if (newlyOpened) notify(`${portal.routeLabel}已打通 · 两端现在可以往返`);
   }
 
@@ -756,9 +760,12 @@
     }
     if (enemy.state === "dormant") {
       if (!conditionsMet(currentRoom().encounter) || player.x < enemy.triggerX) return true;
+      if (enemy.triggerHeight !== undefined
+        && (Math.abs(player.x - enemy.x) >= CONFIG.scavengerReach
+          || Math.abs(player.y + BODY.height - enemy.floor) > enemy.triggerHeight)) return true;
       enemy.state = "recovery";
       enemy.timer = 0;
-      notify("食腐甲被惊动 · 橙色蓄力后近扑，跳开后趁收招按 J 反击");
+      notify(currentRoom().encounter.startNotice || "食腐甲被惊动 · 橙色蓄力后近扑，跳开后趁收招按 J 反击");
     }
     if (enemy.stun > 0) { enemy.state = "recovery"; enemy.timer = CONFIG.scavengerRecovery; return false; }
     enemy.flash = Math.max(0, enemy.flash - dt);
@@ -1157,7 +1164,9 @@
         ctx.strokeRect(enemy.x + 4, enemy.y - 5, enemy.w - 8, 5);
         ctx.font = "12px system-ui";
         ctx.textAlign = "center";
-        ctx.fillText(enemy.state === "withdrawn" ? "退回聚食处" : `食腐甲 ${enemy.hp}`, enemy.x + enemy.w / 2, enemy.y - 14);
+        const name = currentRoom().encounter.enemyName;
+        const label = enemy.state === "withdrawn" ? (name ? "已退回" : "退回聚食处") : `${name || "食腐甲"} ${enemy.hp}`;
+        ctx.fillText(label, enemy.x + enemy.w / 2, enemy.y - 14);
         if (enemy.state === "windup") {
           ctx.setLineDash([5, 4]);
           ctx.strokeRect(enemy.dir > 0 ? enemy.x + enemy.w : enemy.x - CONFIG.scavengerSpeed * CONFIG.scavengerLunge,
@@ -1443,7 +1452,8 @@
       const middle = points.length === 4
         ? [points[1][0], (points[1][1] + points[2][1]) / 2]
         : [(points[0][0] + points[1][0]) / 2, (points[0][1] + points[1][1]) / 2];
-      mapElement(svg, "rect", { x: middle[0] - 40, y: middle[1] - 13, width: 80, height: 26, fill: "#202630" });
+      const width = Math.max(80, (portal.opensRoute.length + 4) * 15);
+      mapElement(svg, "rect", { x: middle[0] - width / 2, y: middle[1] - 13, width, height: 26, fill: "#202630" });
       mapElement(svg, "text", { x: middle[0], y: middle[1] + 5, fill: color, "font-size": 15, "text-anchor": "middle",
         "data-shortcut": portal.opensRoute }, `${portal.opensRoute} ${open ? "已打通" : "未打通"}`);
     }
@@ -1461,7 +1471,7 @@
     const [organ, ...rest] = name.split("·");
     const textAttrs = { x: x + 95, "text-anchor": "middle", fill: here ? "#b9e4ff" : visited ? "#e7e9ed" : "#a2abb9", "font-size": 17 };
     mapElement(group, "text", { ...textAttrs, y: y + 29 }, `${chapter} · ${organ}`);
-    mapElement(group, "text", { ...textAttrs, y: y + 55 }, rest.join("·"));
+    mapElement(group, "text", { ...textAttrs, y: y + 55 }, room.mapLabel || rest.join("·"));
     mapElement(group, "text", { ...textAttrs, y: y + 85, "font-size": 14, "font-weight": here ? 600 : 400 }, here ? "你在这里" : visited ? "已到达" : "未到达");
   }
 
