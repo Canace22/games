@@ -4,7 +4,7 @@
   "name": "鲸落万物生 · R1 七区灰盒",
   "saveKey": "whalefall-r1-reference-graybox-v1",
   "startCheckpoint": "r1-01",
-  "backgroundImage": "r1-reference.png",
+  "backgroundImage": "r1-bob-backgrounds.webp",
   "storyFlags": [
     "r1-finished",
     "r1-crab-retreated"
@@ -36,10 +36,10 @@
     "r1-01": {
       "name": "R1-01 · 外伤坡",
       "background": {
-        "x": 78,
-        "y": 229,
-        "w": 195,
-        "h": 111
+        "x": 0,
+        "y": 0,
+        "w": 1024,
+        "h": 576
       },
       "width": 1120,
       "height": 660,
@@ -92,10 +92,10 @@
     "r1-02": {
       "name": "R1-02 · 须帘",
       "background": {
-        "x": 330,
-        "y": 216,
-        "w": 260,
-        "h": 115
+        "x": 1024,
+        "y": 0,
+        "w": 1024,
+        "h": 576
       },
       "width": 1460,
       "height": 760,
@@ -188,10 +188,10 @@
     "r1-03": {
       "name": "R1-03 · 舌台",
       "background": {
-        "x": 578,
-        "y": 236,
-        "w": 219,
-        "h": 110
+        "x": 2048,
+        "y": 0,
+        "w": 1024,
+        "h": 576
       },
       "width": 1280,
       "height": 760,
@@ -301,10 +301,10 @@
     "r1-04": {
       "name": "R1-04 · 负壳蟹",
       "background": {
-        "x": 796,
-        "y": 232,
-        "w": 346,
-        "h": 118
+        "x": 3072,
+        "y": 0,
+        "w": 1024,
+        "h": 637
       },
       "width": 1240,
       "height": 715,
@@ -393,10 +393,10 @@
     "r1-05": {
       "name": "R1-05 · 流膜育窟",
       "background": {
-        "x": 1135,
-        "y": 250,
-        "w": 184,
-        "h": 116
+        "x": 0,
+        "y": 740,
+        "w": 1024,
+        "h": 620
       },
       "width": 1280,
       "height": 795,
@@ -452,17 +452,21 @@
       "enemies": [],
       "chapterLabel": "试玩",
       "interactions": [
-        {"id":"r1-end","x":1112,"y":470,"w":84,"h":70,"kind":"exit","label":"通路终点 · ↑ 确认","setsFlag":"r1-finished","message":"已到达流膜育窟终点。可以原路返回，补走上层支路。"}
+        {
+          "id": "r1-end", "x": 1112, "y": 470, "w": 168, "h": 70, "kind": "exit",
+          "label": "流膜育窟终点", "setsFlag": "r1-finished", "message": "试玩完成 · 可以原路返回",
+          "ending": {"title":"一鲸落，万物生","crop":{"x":72,"y":22,"w":1258,"h":354}}
+        }
       ],
       "mapLabel": "长跳跨断口 · 短跳落台"
     },
     "r1-06": {
       "name": "R1-06 · 喷气孔上层",
       "background": {
-        "x": 354,
-        "y": 51,
-        "w": 199,
-        "h": 145
+        "x": 1024,
+        "y": 740,
+        "w": 1024,
+        "h": 739
       },
       "width": 1160,
       "height": 835,
@@ -535,10 +539,10 @@
     "r1-07": {
       "name": "R1-07 · 鲸须记忆袋",
       "background": {
-        "x": 557,
-        "y": 51,
-        "w": 199,
-        "h": 163
+        "x": 2048,
+        "y": 740,
+        "w": 1024,
+        "h": 652
       },
       "width": 1240,
       "height": 750,
