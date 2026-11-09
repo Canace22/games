@@ -55,8 +55,10 @@
     enemyStun: 0.24,           // 普通敌人受击后暂停巡逻的时间
     actionEffectLifetime: 0.28, // 动作粒子淡出的时间
     landingEffectSpeed: 150,   // 低于此下落速度的接地不产生粒子
-    downStrikeWidth: 46,       // 下劈判定宽度，以角色中心为准
-    downStrikeReach: 76,       // 下劈从脚底向下探测的距离
+    downStrikeWidth: 60,       // 下刺判定宽度，以角色中心为准
+    downStrikeReach: 88,       // 下刺从脚底向下探测的距离
+    downStrikeDuration: 0.24,  // 出招后仍可命中的时间
+    downStrikeBuffer: 0.14,    // 起跳前提前按 K 的宽限
     bounceSpeed: 760,          // 击中骨簧或敌人后的向上速度
 
     // 第一章食腐甲：只影响 kind=scavenger 的短遭遇，橙色蓄力后直线近扑。
@@ -205,6 +207,7 @@
   let notice = "";
   let noticeTime = 0;
   let attackRequested = false;
+  let downStrikeBuffer = 0;
   let downStrike = false;
   let portalRequested = false;
   let hitStopTime = 0;
@@ -502,6 +505,7 @@
     jumpBuffer = 0;
     dashRequested = false;
     attackRequested = false;
+    downStrikeBuffer = 0;
     portalRequested = false;
     checkpointTouch = progress.checkpoint;
     actionEffects.length = 0;
@@ -552,6 +556,7 @@
     player.attackTime = 0;
     actionEffects.length = 0;
     attackRequested = false;
+    downStrikeBuffer = 0;
     portalRequested = false;
     waves = [];
     hitStopTime = 0;
@@ -728,11 +733,15 @@
     return { x: player.x, y: player.y, w: BODY.width, h: BODY.height };
   }
 
-  function attackBox() {
-    if (downStrike) return {
+  function downStrikeBox() {
+    return {
       x: player.x + (BODY.width - CONFIG.downStrikeWidth) / 2, y: player.y + BODY.height - 2,
       w: CONFIG.downStrikeWidth, h: CONFIG.downStrikeReach,
     };
+  }
+
+  function attackBox() {
+    if (downStrike) return downStrikeBox();
     return { x: player.attackFacing > 0 ? player.x + BODY.width - 2 : player.x - CONFIG.attackRange + 2,
       y: player.y + BODY.height / 2 - CONFIG.attackHeight / 2,
       w: CONFIG.attackRange, h: CONFIG.attackHeight };
@@ -777,6 +786,7 @@
     player.dashTime = 0;
     player.attackTime = 0;
     attackRequested = false;
+    downStrikeBuffer = 0;
     addActionEffect("hurt", player.x + BODY.width / 2, player.y + BODY.height / 2);
     hitFeedback();
   }
@@ -785,14 +795,17 @@
     for (const timer of ["invulnerable", "hurtTime", "attackTime", "attackCooldown"]) {
       player[timer] = Math.max(0, player[timer] - dt);
     }
-    if (attackRequested && player.attackCooldown <= 0 && player.hurtTime <= 0) {
+    const wantsDownStrike = !attackRequested && downStrikeBuffer > 0 && !player.grounded;
+    if ((attackRequested || wantsDownStrike) && player.attackCooldown <= 0 && player.hurtTime <= 0) {
       attackSerial++;
-      downStrike = Boolean(MAP.downStrike && !player.grounded && (keys.has("ArrowDown") || keys.has("KeyS")));
-      player.attackTime = CONFIG.attackDuration;
+      downStrike = wantsDownStrike;
+      player.attackTime = downStrike ? CONFIG.downStrikeDuration : CONFIG.attackDuration;
       player.attackCooldown = CONFIG.attackCooldown;
       player.attackFacing = player.facing;
+      downStrikeBuffer = 0;
     }
     attackRequested = false;
+    downStrikeBuffer = Math.max(0, downStrikeBuffer - dt);
   }
 
   function updateEnemies(dt) {
@@ -1174,6 +1187,8 @@
     const box = attackBox();
     if (downStrike) {
       const center = box.x + box.w / 2;
+      ctx.save();
+      ctx.globalAlpha = 0.4 + 0.6 * player.attackTime / CONFIG.downStrikeDuration;
       ctx.strokeStyle = "#a8f2d9";
       ctx.lineWidth = 3;
       ctx.beginPath();
@@ -1181,6 +1196,7 @@
       ctx.quadraticCurveTo(box.x + 3, box.y + box.h / 2, center, box.y + box.h - 5);
       ctx.quadraticCurveTo(box.x + box.w - 3, box.y + box.h / 2, box.x + box.w - 4, box.y + 4);
       ctx.stroke();
+      ctx.restore();
       return;
     }
     const front = player.attackFacing > 0 ? box.x : box.x + box.w;
@@ -1394,13 +1410,16 @@
   function drawRoomObjects() {
     const room = currentRoom();
     ctx.font = "14px system-ui";
-    ctx.textAlign = "left";
     for (const spring of room.springs || []) {
+      const box = downStrikeBox();
+      const inReach = !player.grounded && spring.y >= box.y && touches(box, spring);
       ctx.fillStyle = "#254d48";
       ctx.fillRect(spring.x, spring.y, spring.w, spring.h);
-      ctx.fillStyle = "#a8f2d9";
+      ctx.fillStyle = inReach ? "#e8fff4" : "#a8f2d9";
       ctx.fillRect(spring.x, spring.y, spring.w, 2);
       for (let x = spring.x + 8; x + 3 < spring.x + spring.w; x += 12) ctx.fillRect(x, spring.y + 5, 3, 5);
+      ctx.textAlign = "center";
+      ctx.fillText("K", spring.x + spring.w / 2, spring.y - 8);
     }
     for (const [side, door] of Object.entries(room.doors)) {
       const left = side === "left";
@@ -1712,7 +1731,7 @@
   document.getElementById("close-map").addEventListener("click", closeWorldMap);
   document.getElementById("world-map").addEventListener("cancel", event => { event.preventDefault(); closeWorldMap(); });
 
-  const gameKeys = new Set(["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "KeyA", "KeyD", "KeyS", "Space", "ShiftLeft", "ShiftRight", "KeyJ", "KeyR", "KeyF"]);
+  const gameKeys = new Set(["ArrowLeft", "ArrowRight", "ArrowUp", "KeyA", "KeyD", "Space", "ShiftLeft", "ShiftRight", "KeyJ", "KeyK", "KeyR", "KeyF"]);
   window.addEventListener("keydown", event => {
     if (event.ctrlKey || event.metaKey || event.altKey) return;
     if (mapOpen || (event.code === "KeyM" && mapReady && MAP.ui?.showMap)) {
@@ -1723,7 +1742,7 @@
       return;
     }
     if (!mapReady || !gameKeys.has(event.code) || event.ctrlKey || event.metaKey || event.altKey) return;
-    if (!MAP.downStrike && (event.code === "ArrowDown" || event.code === "KeyS")) return;
+    if (!MAP.downStrike && event.code === "KeyK") return;
     if (event.code === "ArrowUp" && !currentRoom().portals?.length && !currentRoom().interactions?.length) return;
     event.preventDefault();
     paused = false;
@@ -1732,6 +1751,7 @@
     if (event.code === "Space") jumpBuffer = CONFIG.jumpBufferTime;
     if (event.code === "ShiftLeft" || event.code === "ShiftRight") dashRequested = true;
     if (event.code === "KeyJ") attackRequested = true;
+    if (event.code === "KeyK") downStrikeBuffer = CONFIG.downStrikeBuffer;
     if (event.code === "ArrowUp") portalRequested = true;
     if (event.code === "KeyR") {
       reset();
@@ -1750,6 +1770,7 @@
     jumpBuffer = 0;
     dashRequested = false;
     attackRequested = false;
+    downStrikeBuffer = 0;
     portalRequested = false;
     paused = true;
     accumulator = 0;
