@@ -268,6 +268,7 @@
       require(data[field] === undefined || (typeof data[field] === "string"
         && /^[a-z0-9][a-z0-9.-]*\.(png|jpe?g|webp)$/i.test(data[field])), field);
     }
+    require(data.backgroundFit === undefined || (data.backgroundImage && data.backgroundFit === "room"), "backgroundFit");
     require(data.ui?.actionEffects === undefined || typeof data.ui.actionEffects === "boolean", "ui.actionEffects");
     require(data.downStrike === undefined || typeof data.downStrike === "boolean", "downStrike");
     require(data.routeLocks === undefined || record(data.routeLocks), "routeLocks");
@@ -1563,7 +1564,9 @@
     const crop = readyBackgroundCrop();
     if (!crop) return false;
     const room = currentRoom();
-    const scale = Math.max(VIEW.width / crop.w, VIEW.height / crop.h);
+    const inRoom = MAP.backgroundFit === "room";
+    const frame = inRoom ? room : VIEW;
+    const scale = Math.max(frame.width / crop.w, frame.height / crop.h);
     const width = Math.ceil(crop.w * scale), height = Math.ceil(crop.h * scale);
     const pan = (cameraOffset, roomSize, viewSize, imageSize) => {
       const range = roomSize - viewSize;
@@ -1571,10 +1574,13 @@
       const speed = range > 0 ? Math.min(0.55, (imageSize - viewSize) / range) : 0;
       return Math.round((viewSize - imageSize) / 2 - offset * speed);
     };
+    const x = inRoom ? Math.round((room.width - width) / 2) - Math.round(camera.x)
+      : pan(camera.x, room.width, VIEW.width, width);
+    const y = inRoom ? Math.round((room.height - height) / 2) - Math.round(camera.y)
+      : pan(camera.y, room.height, VIEW.height, height);
     ctx.save();
     ctx.imageSmoothingEnabled = true;
-    ctx.drawImage(backgroundImage, crop.x, crop.y, crop.w, crop.h,
-      pan(camera.x, room.width, VIEW.width, width), pan(camera.y, room.height, VIEW.height, height), width, height);
+    ctx.drawImage(backgroundImage, crop.x, crop.y, crop.w, crop.h, x, y, width, height);
     ctx.fillStyle = "rgba(10, 20, 29, 0.48)";
     ctx.fillRect(0, 0, VIEW.width, VIEW.height);
     ctx.restore();

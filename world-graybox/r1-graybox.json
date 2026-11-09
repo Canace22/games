@@ -4,7 +4,8 @@
   "name": "鲸落万物生 · R1 七区灰盒",
   "saveKey": "whalefall-r1-reference-graybox-v1",
   "startCheckpoint": "r1-01",
-  "backgroundImage": "r1-bob-backgrounds.webp",
+  "backgroundImage": "r1-bob-8983-backgrounds.webp",
+  "backgroundFit": "room",
   "overviewImage": "r1-reference.png",
   "storyFlags": [
     "r1-finished",
