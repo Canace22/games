@@ -55,6 +55,9 @@
     enemyStun: 0.24,           // 普通敌人受击后暂停巡逻的时间
     actionEffectLifetime: 0.28, // 动作粒子淡出的时间
     landingEffectSpeed: 150,   // 低于此下落速度的接地不产生粒子
+    downStrikeWidth: 46,       // 下劈判定宽度，以角色中心为准
+    downStrikeReach: 76,       // 下劈从脚底向下探测的距离
+    bounceSpeed: 760,          // 击中骨簧或敌人后的向上速度
 
     // 第一章食腐甲：只影响 kind=scavenger 的短遭遇，橙色蓄力后直线近扑。
     scavengerWindup: 0.55,     // 近扑前摇，朝向在前摇开始时锁定
@@ -202,6 +205,7 @@
   let notice = "";
   let noticeTime = 0;
   let attackRequested = false;
+  let downStrike = false;
   let portalRequested = false;
   let hitStopTime = 0;
   let shakeTime = 0;
@@ -212,6 +216,7 @@
     land: { color: "#b9ced7", count: 7, sweep: 1, travel: 28, streak: 5 },
     hit: { color: "#ffdb95", count: 8, sweep: 1.8, travel: 36, streak: 11 },
     hurt: { color: "#f69ba8", count: 7, sweep: 1.8, travel: 33, streak: 9 },
+    bounce: { color: "#a8f2d9", count: 10, sweep: 1, travel: 43, streak: 12 },
     defeat: { color: "#e9a6c5", count: 11, sweep: 1.8, travel: 46, streak: 11 },
   };
   let attackSerial = 0;
@@ -254,6 +259,7 @@
     require(data.backgroundImage === undefined || (typeof data.backgroundImage === "string"
       && /^[a-z0-9][a-z0-9.-]*\.(png|jpe?g|webp)$/i.test(data.backgroundImage)), "backgroundImage");
     require(data.ui?.actionEffects === undefined || typeof data.ui.actionEffects === "boolean", "ui.actionEffects");
+    require(data.downStrike === undefined || typeof data.downStrike === "boolean", "downStrike");
     require(data.routeLocks === undefined || record(data.routeLocks), "routeLocks");
     require(data.storyFlags === undefined || (Array.isArray(data.storyFlags)
       && data.storyFlags.every(id => typeof id === "string")), "storyFlags");
@@ -275,6 +281,8 @@
       require(numbers(room, ["width", "height"]) && room.width >= VIEW.width && room.height >= VIEW.height
         && typeof room.name === "string" && typeof room.hint === "string", `rooms.${id}`);
       require(Array.isArray(room.platforms) && room.platforms.every(rect), `${id}.platforms`);
+      require(room.springs === undefined || (data.downStrike && Array.isArray(room.springs)
+        && room.springs.every(rect)), `${id}.springs`);
       require(Array.isArray(room.signs) && room.signs.every(sign => numbers(sign, ["x", "y"])
         && typeof sign.text === "string"), `${id}.signs`);
       require(Array.isArray(room.hints) && room.hints.every(hint => record(hint) && typeof hint.text === "string"
@@ -721,9 +729,24 @@
   }
 
   function attackBox() {
+    if (downStrike) return {
+      x: player.x + (BODY.width - CONFIG.downStrikeWidth) / 2, y: player.y + BODY.height - 2,
+      w: CONFIG.downStrikeWidth, h: CONFIG.downStrikeReach,
+    };
     return { x: player.attackFacing > 0 ? player.x + BODY.width - 2 : player.x - CONFIG.attackRange + 2,
       y: player.y + BODY.height / 2 - CONFIG.attackHeight / 2,
       w: CONFIG.attackRange, h: CONFIG.attackHeight };
+  }
+
+  function bounceFrom(target) {
+    player.vy = -CONFIG.bounceSpeed;
+    player.grounded = false;
+    player.coyote = 0;
+    player.jumpCut = true;
+    player.extraJumpUsed = false;
+    player.cooldown = 0;
+    player.attackTime = 0;
+    addActionEffect("bounce", target.x + target.w / 2, target.y);
   }
 
   function hitFeedback() {
@@ -764,6 +787,7 @@
     }
     if (attackRequested && player.attackCooldown <= 0 && player.hurtTime <= 0) {
       attackSerial++;
+      downStrike = Boolean(MAP.downStrike && !player.grounded && (keys.has("ArrowDown") || keys.has("KeyS")));
       player.attackTime = CONFIG.attackDuration;
       player.attackCooldown = CONFIG.attackCooldown;
       player.attackFacing = player.facing;
@@ -966,8 +990,14 @@
   function resolvePlayerAttack() {
     if (player.attackTime <= 0) return;
     const box = attackBox();
+    if (downStrike) {
+      if (player.grounded) { player.attackTime = 0; return; }
+      const spring = currentRoom().springs?.find(s => s.y >= box.y && touches(box, s));
+      if (spring) { bounceFrom(spring); return; }
+    }
     for (const enemy of enemiesByRoom[roomId]) {
       if (!enemyIsHostile(enemy) || enemy.lastSwing === attackSerial || !touches(box, enemy)) continue;
+      if (downStrike && enemy.y < box.y) continue;
       enemy.lastSwing = attackSerial;
       const inFront = (player.x + BODY.width / 2 - enemy.x - enemy.w / 2) * enemy.dir > 0;
       if (enemy.kind === "shell-guard" && inFront && enemy.state !== "recovery") {
@@ -988,13 +1018,16 @@
       if (enemy.hp <= 0 && ["scavenger", "shell-guard", "sludge-crab"].includes(enemy.kind)) enemy.state = "withdrawn";
       addActionEffect(enemy.hp > 0 ? "hit" : "defeat", enemy.x + enemy.w / 2, enemy.y + enemy.h / 2);
       hitFeedback();
+      if (downStrike) { bounceFrom(enemy); return; }
     }
-    if (!boss || boss.hp <= 0 || boss.lastSwing === attackSerial || !touches(box, boss)) return;
+    if (!boss || boss.hp <= 0 || boss.lastSwing === attackSerial || !touches(box, boss)
+      || (downStrike && boss.y < box.y)) return;
     boss.hp = Math.max(0, boss.hp - CONFIG.attackDamage);
     boss.lastSwing = attackSerial;
     boss.flash = CONFIG.hitFlash;
     addActionEffect(boss.hp > 0 ? "hit" : "defeat", boss.x + boss.w / 2, boss.y + boss.h / 2);
     hitFeedback();
+    if (downStrike) bounceFrom(boss);
     if (boss.hp <= 0) {
       boss.active = false;
       boss.state = "defeated";
@@ -1139,6 +1172,17 @@
   function drawAttack() {
     if (player.attackTime <= 0) return;
     const box = attackBox();
+    if (downStrike) {
+      const center = box.x + box.w / 2;
+      ctx.strokeStyle = "#a8f2d9";
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(box.x + 4, box.y + 4);
+      ctx.quadraticCurveTo(box.x + 3, box.y + box.h / 2, center, box.y + box.h - 5);
+      ctx.quadraticCurveTo(box.x + box.w - 3, box.y + box.h / 2, box.x + box.w - 4, box.y + 4);
+      ctx.stroke();
+      return;
+    }
     const front = player.attackFacing > 0 ? box.x : box.x + box.w;
     const tip = front + player.attackFacing * box.w;
     if (MAP.ui?.actionEffects) {
@@ -1351,6 +1395,13 @@
     const room = currentRoom();
     ctx.font = "14px system-ui";
     ctx.textAlign = "left";
+    for (const spring of room.springs || []) {
+      ctx.fillStyle = "#254d48";
+      ctx.fillRect(spring.x, spring.y, spring.w, spring.h);
+      ctx.fillStyle = "#a8f2d9";
+      ctx.fillRect(spring.x, spring.y, spring.w, 2);
+      for (let x = spring.x + 8; x + 3 < spring.x + spring.w; x += 12) ctx.fillRect(x, spring.y + 5, 3, 5);
+    }
     for (const [side, door] of Object.entries(room.doors)) {
       const left = side === "left";
       ctx.fillStyle = "#86aebc";
@@ -1661,7 +1712,7 @@
   document.getElementById("close-map").addEventListener("click", closeWorldMap);
   document.getElementById("world-map").addEventListener("cancel", event => { event.preventDefault(); closeWorldMap(); });
 
-  const gameKeys = new Set(["ArrowLeft", "ArrowRight", "ArrowUp", "KeyA", "KeyD", "Space", "ShiftLeft", "ShiftRight", "KeyJ", "KeyR", "KeyF"]);
+  const gameKeys = new Set(["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "KeyA", "KeyD", "KeyS", "Space", "ShiftLeft", "ShiftRight", "KeyJ", "KeyR", "KeyF"]);
   window.addEventListener("keydown", event => {
     if (event.ctrlKey || event.metaKey || event.altKey) return;
     if (mapOpen || (event.code === "KeyM" && mapReady && MAP.ui?.showMap)) {
@@ -1672,6 +1723,7 @@
       return;
     }
     if (!mapReady || !gameKeys.has(event.code) || event.ctrlKey || event.metaKey || event.altKey) return;
+    if (!MAP.downStrike && (event.code === "ArrowDown" || event.code === "KeyS")) return;
     if (event.code === "ArrowUp" && !currentRoom().portals?.length && !currentRoom().interactions?.length) return;
     event.preventDefault();
     paused = false;
@@ -1752,6 +1804,7 @@
       room: { id: roomId, name: currentRoom().name, width: currentRoom().width,
         height: currentRoom().height, doors: currentRoom().doors },
       mapId: MAP.id,
+      ...(MAP.downStrike ? { springs: currentRoom().springs || [] } : {}),
       ...(MAP.backgroundImage ? { background: { image: MAP.backgroundImage, crop: readyBackgroundCrop() } } : {}),
       mapOpen,
       portals: (currentRoom().portals || []).map(portal => ({ ...portal, open: conditionsMet(portal) })),
