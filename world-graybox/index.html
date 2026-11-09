@@ -380,9 +380,14 @@
     loadProgress();
     reset();
     if (data.backgroundImage) {
-      backgroundImage = new Image();
-      backgroundImage.addEventListener("load", draw, { once: true });
-      backgroundImage.src = data.backgroundImage;
+      const image = new Image();
+      image.src = data.backgroundImage;
+      image.decode().then(() => {
+        backgroundImage = image;
+        draw();
+      }, () => {
+        // 底图加载或解码失败时，继续使用默认灰盒背景。
+      });
     }
     notify(progress.checkpoint === MAP.startCheckpoint && !progress.abilities.doubleJump
       ? roomHint() : `从${CHECKPOINTS[progress.checkpoint].name}继续 · 已恢复本地进度`);
