@@ -215,6 +215,7 @@
   let downStrikeBuffer = 0;
   let downStrike = false;
   let portalRequested = false;
+  let arrivalGuidePortal;
   let hitStopTime = 0;
   let shakeTime = 0;
   let effectClock = 0;
@@ -296,6 +297,9 @@
       require(Array.isArray(room.platforms) && room.platforms.every(rect), `${id}.platforms`);
       require(room.springs === undefined || (data.downStrike && Array.isArray(room.springs)
         && room.springs.every(rect)), `${id}.springs`);
+      require(room.jumpGuides === undefined || (Array.isArray(room.jumpGuides)
+        && room.jumpGuides.every(guide => numbers(guide, ["x", "y", "landX", "landY", "lift"])
+          && typeof guide.label === "string")), `${id}.jumpGuides`);
       require(Array.isArray(room.signs) && room.signs.every(sign => numbers(sign, ["x", "y"])
         && typeof sign.text === "string"), `${id}.signs`);
       require(Array.isArray(room.hints) && room.hints.every(hint => record(hint) && typeof hint.text === "string"
@@ -410,8 +414,11 @@
       document.getElementById("map-return-legend").hidden = !data.returnRoutes?.length;
     }
     for (const [key, id] of Object.entries({ title: "game-title", controls: "controls", note: "map-note", saveNotice: "save-status" })) {
-      if (ui[key]) document.getElementById(id).textContent = ui[key];
+      if (ui[key] !== undefined) document.getElementById(id).textContent = ui[key];
     }
+    document.getElementById("map-note").hidden = ui.note === "";
+    document.getElementById("jump-status").hidden = Boolean(ui.actionGuide);
+    dashStatus.hidden = Boolean(ui.actionGuide);
     if (ui.canvasLabel) canvas.setAttribute("aria-label", ui.canvasLabel);
     loadProgress();
     reset();
@@ -419,8 +426,9 @@
     if (data.overviewImage !== data.backgroundImage) {
       loadMapImage(data.overviewImage, image => { overviewImage = image; });
     }
-    notify(progress.checkpoint === MAP.startCheckpoint && !progress.abilities.doubleJump
-      ? roomHint() : `从${CHECKPOINTS[progress.checkpoint].name}继续 · 已恢复本地进度`);
+    if (progress.checkpoint !== MAP.startCheckpoint || progress.abilities.doubleJump) {
+      notify(`从${CHECKPOINTS[progress.checkpoint].name}继续 · 已恢复本地进度`);
+    } else if (!ui.actionGuide) notify(roomHint());
     requestAnimationFrame(frame);
   }
 
@@ -521,6 +529,7 @@
       health: CONFIG.playerHealth, invulnerable: CONFIG.hurtInvulnerability, hurtTime: 0,
       attackTime: 0, attackCooldown: 0, attackFacing: 1,
     });
+    arrivalGuidePortal = MAP.ui?.actionGuide ? portalUnderPlayer() : undefined;
     keys.clear();
     jumpBuffer = 0;
     dashRequested = false;
@@ -550,7 +559,8 @@
     paused = false;
     saveProgress();
     reset();
-    notify(roomHint());
+    if (!MAP.ui?.actionGuide) notify(roomHint());
+    else noticeTime = 0;
   }
 
   function doorIsOpen(side) {
@@ -582,6 +592,7 @@
     hitStopTime = 0;
     shakeTime = 0;
     boss = createBoss();
+    arrivalGuidePortal = MAP.ui?.actionGuide ? portalUnderPlayer() : undefined;
     progress.visited.add(roomId);
     if (checkpoint) {
       progress.checkpoint = checkpoint;
@@ -589,12 +600,17 @@
     }
     Object.assign(camera, cameraTarget(true));
     saveProgress();
-    notify(roomHint());
+    if (!MAP.ui?.actionGuide) notify(roomHint());
+    else noticeTime = 0;
   }
 
   // 室内门框用于多出口地图；原五房仍使用原来的边缘自动换房。
+  function portalUnderPlayer() {
+    return currentRoom().portals?.find(overlaps);
+  }
+
   function enterPortal() {
-    const portal = (currentRoom().portals || []).find(overlaps);
+    const portal = portalUnderPlayer();
     if (!portal) return;
     if (!conditionsMet(portal)) { notify(portal.lockedHint || "此出口尚未开放"); return; }
     const newlyOpened = portal.opensRoute && !progress.openedRoutes.has(portal.opensRoute);
@@ -770,6 +786,11 @@
     };
   }
 
+  function canReachSpring(spring) {
+    const box = downStrikeBox();
+    return !player.grounded && spring.y >= box.y && touches(box, spring);
+  }
+
   function attackBox() {
     if (downStrike) return downStrikeBox();
     return { x: player.attackFacing > 0 ? player.x + BODY.width - 2 : player.x - CONFIG.attackRange + 2,
@@ -876,7 +897,9 @@
           || Math.abs(player.y + BODY.height - enemy.floor) > enemy.triggerHeight)) return true;
       enemy.state = "recovery";
       enemy.timer = 0;
-      notify(currentRoom().encounter.startNotice || "食腐甲被惊动 · 橙色蓄力后近扑，跳开后趁收招按 J 反击");
+      if (!MAP.ui?.actionGuide) {
+        notify(currentRoom().encounter.startNotice || "食腐甲被惊动 · 橙色蓄力后近扑，跳开后趁收招按 J 反击");
+      }
     }
     if (enemy.stun > 0) { enemy.state = "recovery"; enemy.timer = CONFIG.scavengerRecovery; return false; }
     enemy.flash = Math.max(0, enemy.flash - dt);
@@ -1164,6 +1187,7 @@
     }
     if (player.x < 0 && doorIsOpen("left")) changeRoom("left");
     else if (player.x + BODY.width > currentRoom().width && doorIsOpen("right")) changeRoom("right");
+    if (arrivalGuidePortal && !overlaps(arrivalGuidePortal)) arrivalGuidePortal = undefined;
     if (checkEndingArrival()) return;
     if (portalRequested) { portalRequested = false; if (!enterInteraction()) enterPortal(); }
     if (ending) return;
@@ -1443,19 +1467,114 @@
     return item.kind === "ability" ? !progress.abilities[item.id] : !progress.collected.has(item.id);
   }
 
+  function actionGuide() {
+    if (!MAP.ui?.actionGuide || ending || mapOpen || paused) return null;
+    const room = currentRoom();
+    const x = player.x + BODY.width / 2, feet = player.y + BODY.height;
+    const portal = portalUnderPlayer();
+    if (portal && portal !== arrivalGuidePortal && conditionsMet(portal)) {
+      const label = portal.opensRoute && !progress.openedRoutes.has(portal.opensRoute)
+        ? "打通捷径" : portalName(portal);
+      return { key: "↑", label, x: portal.x + portal.w / 2, y: portal.y - 24 };
+    }
+    const spring = room.springs?.find(s => x >= s.x - 140 && x < s.x + s.w + 25
+      && feet > s.y - 115 && feet < s.y + 70);
+    if (spring && !actionEffects.some(effect => effect.kind === "bounce")) {
+      const ready = canReachSpring(spring) && player.attackCooldown <= 0 && player.hurtTime <= 0;
+      return { key: player.grounded ? "Z" : "C", label: player.grounded ? "跳向骨簧" : "下刺反弹",
+        x: spring.x + spring.w / 2, y: Math.min(player.y - 24, spring.y - 63), spring, ready };
+    }
+    const enemy = enemiesByRoom[roomId].find(e => enemyIsHostile(e) && Math.abs(feet - e.floor) < 65
+      && Math.abs(x - e.x) < (e.kind === "scavenger" ? CONFIG.scavengerReach : 138));
+    if (enemy && player.attackTime <= 0) {
+      const dodge = ["windup", "lunge"].includes(enemy.state);
+      if (!dodge || player.grounded) return { key: dodge ? "Z" : "X",
+        label: dodge ? "跳躲" : enemy.kind === "scavenger" ? "反击" : "横击",
+        x: enemy.x + enemy.w / 2, y: enemy.y - 52, danger: dodge };
+    }
+    const arc = player.grounded && room.jumpGuides?.find(g => {
+      const distance = (g.x - x) * Math.sign(g.landX - g.x);
+      return feet === g.y && distance > -14 && distance < 100;
+    });
+    if (arc) return { key: "Z", label: arc.label, x: (arc.x + arc.landX) / 2,
+      y: Math.min(arc.y, arc.landY) - arc.lift * 0.62 - 24, arc };
+    const start = CHECKPOINTS[MAP.startCheckpoint];
+    if (progress.checkpoint === MAP.startCheckpoint && roomId === start.room && Math.abs(x - start.x) < 58) {
+      return { key: "← →", label: "移动", x, y: player.y - 29 };
+    }
+    return null;
+  }
+
+  function drawActionGuide(guide) {
+    const { key, label, arc, spring, ready, danger } = guide;
+    const accent = ready ? "#c4ffe3" : danger ? "#ffd29c" : "#a8e2f4";
+    ctx.save();
+    if (arc) {
+      ctx.strokeStyle = accent;
+      ctx.lineWidth = 3;
+      ctx.lineCap = "round";
+      ctx.setLineDash([2, 9]);
+      ctx.beginPath();
+      ctx.moveTo(arc.x, arc.y - 5);
+      ctx.quadraticCurveTo(guide.x, Math.min(arc.y, arc.landY) - arc.lift, arc.landX, arc.landY - 5);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.beginPath();
+      ctx.ellipse(arc.landX, arc.landY - 3, 10, 4, 0, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+    if (spring && key === "C") {
+      const y = spring.y - 15;
+      ctx.strokeStyle = accent;
+      ctx.lineWidth = ready ? 3 : 2;
+      ctx.beginPath();
+      ctx.moveTo(guide.x - 7, y - 4);
+      ctx.lineTo(guide.x, y + 3);
+      ctx.lineTo(guide.x + 7, y - 4);
+      ctx.stroke();
+    }
+    ctx.font = "600 18px system-ui";
+    const labelWidth = ctx.measureText(label).width;
+    ctx.font = "700 20px system-ui";
+    const keyWidth = Math.max(28, ctx.measureText(key).width + 12);
+    const width = keyWidth + labelWidth + 25;
+    const x = clamp(guide.x - width / 2, camera.x + 8, camera.x + VIEW.width - width - 8);
+    const y = clamp(guide.y - 18, camera.y + 63, camera.y + VIEW.height - 44);
+    ctx.fillStyle = ready ? "#124234" : "rgba(9, 25, 36, 0.93)";
+    ctx.strokeStyle = accent;
+    ctx.lineWidth = ready ? 2 : 1;
+    ctx.beginPath();
+    ctx.roundRect(x, y, width, 38, 9);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = accent;
+    ctx.beginPath();
+    ctx.roundRect(x + 5, y + 5, keyWidth, 28, 5);
+    ctx.fill();
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillStyle = "#102735";
+    ctx.fillText(key, x + 5 + keyWidth / 2, y + 20);
+    ctx.font = "600 18px system-ui";
+    ctx.fillStyle = "#f3f9fb";
+    ctx.fillText(label, x + keyWidth + 14 + labelWidth / 2, y + 20);
+    ctx.restore();
+  }
+
   function drawRoomObjects(paintedTerrain) {
     const room = currentRoom();
     ctx.font = "14px system-ui";
     for (const spring of room.springs || []) {
-      const box = downStrikeBox();
-      const inReach = !player.grounded && spring.y >= box.y && touches(box, spring);
+      const inReach = canReachSpring(spring);
       ctx.fillStyle = "#254d48";
       ctx.fillRect(spring.x, spring.y, spring.w, spring.h);
       ctx.fillStyle = inReach ? "#e8fff4" : "#a8f2d9";
       ctx.fillRect(spring.x, spring.y, spring.w, 2);
       for (let x = spring.x + 8; x + 3 < spring.x + spring.w; x += 12) ctx.fillRect(x, spring.y + 5, 3, 5);
-      ctx.textAlign = "center";
-      ctx.fillText("C / K", spring.x + spring.w / 2, spring.y - 8);
+      if (!MAP.ui?.actionGuide) {
+        ctx.textAlign = "center";
+        ctx.fillText("C / K", spring.x + spring.w / 2, spring.y - 8);
+      }
     }
     for (const [side, door] of Object.entries(room.doors)) {
       const left = side === "left";
@@ -1537,6 +1656,10 @@
       const open = conditionsMet(portal);
       ctx.strokeStyle = ctx.fillStyle = open ? "#e7e9ed" : "#8793a4";
       ctx.lineWidth = 2;
+      if (MAP.ui?.actionGuide) {
+        drawPortalBeacon(portal, open);
+        continue;
+      }
       if (paintedTerrain) {
         const x = portal.x + portal.w / 2, y = portal.y + portal.h - 11;
         ctx.beginPath();
@@ -1560,6 +1683,30 @@
       ctx.fillText(marker.label, marker.x + marker.w / 2, marker.y - 10);
     }
     ctx.restore();
+  }
+
+  function portalName(portal) {
+    return portal.label.replace(/^[←→↑↓]\s*(?:R1-\d+ · )?/, "");
+  }
+
+  function drawPortalBeacon(portal, open) {
+    const x = portal.x + portal.w / 2, y = portal.y + portal.h - 17;
+    const near = overlaps(portal);
+    ctx.fillStyle = "rgba(9, 25, 36, 0.85)";
+    ctx.strokeStyle = open ? near ? "#c4ffe3" : "#a8e2f4" : "#8793a4";
+    ctx.beginPath();
+    ctx.arc(x, y, 12, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(x - 4, y + (open ? 2 : 0));
+    if (open) ctx.lineTo(x, y - 3);
+    ctx.lineTo(x + 4, y + (open ? 2 : 0));
+    ctx.stroke();
+    if ((!near || !open) && Math.abs(x - player.x) < 200 && Math.abs(y - player.y) < 108) {
+      ctx.fillStyle = "#e7e9ed";
+      ctx.fillText(`${portalName(portal)}${open ? "" : " · 已锁"}`, x, portal.y - 11);
+    }
   }
 
   function readyBackgroundCrop() {
@@ -1773,6 +1920,8 @@
     drawPlayer();
     drawAttack();
     drawActionEffects();
+    const guide = actionGuide();
+    if (guide) drawActionGuide(guide);
     ctx.restore();
     ctx.fillStyle = "#b5becc";
     ctx.font = "14px system-ui";
@@ -1781,7 +1930,7 @@
     ctx.textAlign = "right";
     if (COLLECTIBLE_IDS.length) ctx.fillText(`收集 ${progress.collected.size} / ${COLLECTIBLE_IDS.length}`, VIEW.width - 16, 26);
     drawCombatHud();
-    if (currentRoom().encounter) {
+    if (currentRoom().encounter && !MAP.ui?.actionGuide) {
       ctx.textAlign = "left";
       ctx.fillStyle = "#d5dfeb";
       ctx.fillText(`目标：${roomHint()}`, 16, 78);
@@ -2049,6 +2198,7 @@
       room: { id: roomId, name: currentRoom().name, width: currentRoom().width,
         height: currentRoom().height, doors: currentRoom().doors },
       mapId: MAP.id,
+      ...(MAP.ui?.actionGuide ? { guide: actionGuide() } : {}),
       ...(MAP.downStrike ? { springs: currentRoom().springs || [] } : {}),
       ...(MAP.backgroundImage ? { background: { image: MAP.backgroundImage, crop: readyBackgroundCrop() } } : {}),
       mapOpen,
